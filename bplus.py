@@ -1,6 +1,3 @@
-import numpy as np
-
-
 def search(items, key, cmp=lambda x, y: x < y):
     """
     binary search
@@ -57,8 +54,8 @@ class Node:
         self.pos = pos  # current position at self.parent.keys, beginning at -1
         self.left = left  # pointer to left node
         self.right = right  # pointer to right node
-        self.keys = np.array([])
-        self.values = np.array([])
+        self.keys = []
+        self.values = []
 
     def check(self, is_root=False):
         return _check(self.m, len(self.keys), is_root)
@@ -96,11 +93,11 @@ def _fix_on_sibling(m, node, is_left, is_deleting=False):
 
         sibling_pos = len(sibling.keys) if is_left else 0
         node_pos = 0 if is_left else -1
-        sibling.keys = np.insert(sibling.keys, sibling_pos, node.keys[node_pos])
-        sibling.values = np.insert(sibling.values, sibling_pos, node.values[node_pos])
+        sibling.keys.insert(sibling_pos, node.keys[node_pos])
+        sibling.values.insert(sibling_pos, node.values[node_pos])
 
-        node.keys = np.delete(node.keys, node_pos)
-        node.values = np.delete(node.values, node_pos)
+        del node.keys[node_pos]
+        del node.values[node_pos]
         key = node.keys[node_pos]
         _fix_parent(node if is_left else sibling)
         return True
@@ -109,52 +106,53 @@ def _fix_on_sibling(m, node, is_left, is_deleting=False):
 
 
 class Tree:
-    def __init__(self, m=4):
+    def __init__(self, m=4, cmp=lambda x, y: x < y, replace=False):
         self.m = m
+        self.cmp = cmp
         self.root = Node(True, m=self.m)  # initially the root is also a leaf
 
     def __str__(self):  # debugging string
         to_string = "|"
-        deque = np.array([self.root, "\n"])
+        deque = [self.root, "\n"]
         while len(deque) > 1:
             node = deque[0]
             to_string += str(node) + "|"
-            deque = np.delete(deque, 0)
+            del deque[0]
             if type(node) == Node:
                 for child in node.values:
-                    deque = np.append(deque, child)
+                    deque.append(child)
             elif node == "\n":
-                deque = np.append(deque, "\n")
+                deque.append("\n")
         return to_string
 
-    def find(self, key, cmp=lambda x, y: x < y):
-        return self.root.find(key, cmp)
+    def find(self, key):
+        return self.root.find(key, self.cmp)
 
-    def insert(self, key, value, cmp=lambda x, y: x < y, replace=False):
+    def insert(self, key, value, replace=False):
         if len(self.root.keys) == 0:
-            self.root.keys = np.array([key, ])
-            self.root.values = np.array([value, ])
+            self.root.keys = [key, ]
+            self.root.values = [value, ]
             return True
-        node, pos, bias = self.find(key, cmp)
+        node, pos, bias = self.find(key)
         if node.values[pos] == key and not replace:
             # Duplication and should not replace
             return False
         # print(node, pos, bias)
         pos += bias
         # update info on the leaf node
-        node.keys = np.insert(node.keys, pos, key)
-        node.values = np.insert(node.values, pos, value)
+        node.keys.insert(pos, key)
+        node.values.insert(pos, value)
         self.fix(node, key)
         return True
 
     def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
         if len(self.root.keys) == 0:
             return False  # root is empty, cannot delete
-        node, pos, bias = self.find(key, cmp)
+        node, pos, bias = self.find(key)
         if node.keys[pos] != key:
             return False  # cannot find the key specified
-        node.keys = np.delete(node.keys, pos)
-        node.values = np.delete(node.values, pos)
+        del node.keys[pos]
+        del node.values[pos]
         flow_status = node.check(id(self.root) == id(node))
         if not flow_status and pos == 0 and len(node.keys) > 0:  # manually peculate up
             _fix_parent(node)
@@ -177,8 +175,8 @@ class Tree:
                             # is root
                             if id(self.root) == id(node):
                                 self.root = Node(False, m=self.m)
-                                self.root.keys = np.array([], dtype=type(key))
-                                self.root.values = np.array([node, ], dtype=Node)
+                                self.root.keys = []
+                                self.root.values = [node, ]
                                 node.parent = self.root
                                 node.pos = -1
                             new = Node(node.leaf, node.parent, node.pos + 1, node, node.right, m=self.m)
@@ -196,13 +194,14 @@ class Tree:
                             new.values = node.values[self.m // 2 + (0 if node.leaf else 1)::]
                             node.values = node.values[0:self.m // 2 + (0 if node.leaf else 1)]
                             # Update the parent
-                            new.parent.keys = np.insert(new.parent.keys, new.pos, new.keys[0])
-                            new.parent.values = np.insert(new.parent.values, new.pos + 1, new)
+                            new.parent.keys.insert(new.pos, new.keys[0])
+                            new.parent.values.insert(new.pos + 1, new)
 
                             # Prepare for the next loop
                             key = new.keys[0]
                             # inner node should not contain the extra node
-                            new.keys = new.keys if node.leaf else np.delete(new.keys, 0)
+                            if not node.leaf:
+                                del new.keys[0]
                             # update children's parent if is not leaf node
                             if not new.leaf:
                                 for index, child in enumerate(new.values):
@@ -214,10 +213,10 @@ class Tree:
                             # we've already checked left and right, no extra node too share, safe to pack
                             if node.right is None:
                                 node = node.left
-                            node.keys = np.concatenate((node.keys, node.right.keys))
-                            node.values = np.concatenate((node.values, node.right.values))
-                            node.parent.keys = np.delete(node.parent.keys, node.pos + 1)
-                            node.parent.values = np.delete(node.parent.values, node.pos + 2)
+                            node.keys += node.right.keys
+                            node.values += node.right.values
+                            del node.parent.keys[node.pos + 1]
+                            del node.parent.values[node.pos + 2]
                             temp = node.right
                             node.right = temp.right
                             del temp
@@ -244,6 +243,8 @@ if __name__ == "__main__":
         t.insert(14, "gotta ya")
         t.insert(28, "gotta ya")
         t.insert(29, "gotta ya")
+        t.insert(29, "gotta ya")
+        t.insert(29, "gotta ya")
         print(t)
 
 
@@ -262,4 +263,21 @@ if __name__ == "__main__":
     t.delete(25)
     t.delete(28)
     t.delete(29)
+    print(t)
+
+    t = Tree(4)
+    t.insert("0", "Hello, world.")
+    t.insert("5", "Hello, again.")
+    t.insert("10", "Hello, hi.")
+    t.insert("15", "Hello, bad.")
+    t.insert("20", "Hello, bad.")
+    t.insert("25", "Hello, bad.")
+    t.insert("11", "bad, damn")
+    t.insert("12", "gotta ya")
+    t.insert("13", "gotta ya")
+    t.insert("14", "gotta ya")
+    t.insert("28", "gotta ya")
+    t.insert("29", "gotta ya")
+    t.insert("29", "gotta ya")
+    t.insert("29", "gotta ya")
     print(t)
