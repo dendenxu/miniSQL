@@ -23,21 +23,15 @@ def search(items, key, cmp=lambda x, y: x < y):
 
 
 def _check(m, n, is_root=False):
-    """
-    check whether a node is overfull (needs splitting or sibling's help)
-    or check whether a node is under-full (needs merging or sibling's help)
-    :param int m: the maximum child number of a particular node
-    :param int n: the current number of keys in a node (which is number of child minus 1)
-    :param bool is_root: whether the node being checked is the root node
-    :return:
-    """
-    # big = m - 1 - n  # big should >= 0
-    # small = n if is_root else n - (m // 2 - (not m % 2))  # small should >= 0
-    # return 1 if big < 0 else (-1 if small < 0 else 0)
-    if is_root:
-        return not (m-1 >= n >= 0)
+    if not is_root:  # we treat leaf node as inner node
+        # size of v should be ceil(m//2)-1 to m-1
+        # size of k should be ceil(m//2) to m
+        # we assume size of k to be size of v+1
+        return 1 if (m - 1 < n) else (-1 if (n < m // 2 - (not m % 2)) else 0)
     else:
-        return not (m-1 >= n >= m // 2 - (not m % 2))
+        # size of v should be 1 to m-1
+        # size of k should be 0
+        return 0 if m - 1 >= n else 1
 
 
 def _find(node, key, cmp=lambda x, y: x < y):
@@ -93,7 +87,7 @@ def _fix_on_sibling(m, node, is_left, is_deleting=False):
     temp = node
     node = sibling if is_deleting else node
     sibling = temp if is_deleting else sibling
-    if sibling is not None and _check(m, (len(node.keys) - 1) if is_deleting else (len(sibling.keys) + 1)):
+    if sibling is not None and not _check(m, (len(node.keys) - 1) if is_deleting else (len(sibling.keys) + 1)):
         # sibling node is good for sharing
         # TODO: move the left/right most node around
 
@@ -149,21 +143,10 @@ class Tree:
         self.fix(node, key)
         return True
 
-    def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
-        if len(self.root.keys) == 0:
-            return False  # root is empty, cannot delete
-        node, pos, bias = self.find(key, cmp)
-        if node.values[pos] != key:
-            return False  # cannot find the key specified
-        node.keys = np.delete(node.keys, pos, key)
-        node.values = np.delete(node.values, pos, key)
-        self.fix(node, key)
-        return True
-
     def fix(self, node, key):
         while True:
             # check the node itself at first
-            if node.check(is_root=(id(node) == id(self.root))):
+            if node.check():
                 # node is too big, might needs splitting
                 # try left
                 if not node.leaf or not _fix_on_sibling(self.m, node, True):
@@ -212,6 +195,20 @@ class Tree:
 
 if __name__ == "__main__":
     t = Tree(3)
+    t.insert(0, "Hello, world.")
+    t.insert(5, "Hello, again.")
+    t.insert(10, "Hello, hi.")
+    t.insert(15, "Hello, bad.")
+    t.insert(20, "Hello, bad.")
+    t.insert(25, "Hello, bad.")
+    t.insert(11, "bad, damn")
+    t.insert(12, "gotta ya")
+    t.insert(13, "gotta ya")
+    t.insert(14, "gotta ya")
+    t.insert(28, "gotta ya")
+    t.insert(29, "gotta ya")
+    print(t)
+    t = Tree(4)
     t.insert(0, "Hello, world.")
     t.insert(5, "Hello, again.")
     t.insert(10, "Hello, hi.")
