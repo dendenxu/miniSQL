@@ -143,82 +143,104 @@ class Tree:
         self.fix(node, key)
         return True
 
+     def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
+         if len(self.root.keys) == 0:
+             return False  # root is empty, cannot delete
+         node, pos, bias = self.find(key, cmp)
+         if node.keys[pos] != key:
+             return False  # cannot find the key specified
+         node.keys = np.delete(node.keys, pos)
+         node.values = np.delete(node.values, pos)
+         self.fix(node, key)
+         return True
+
     def fix(self, node, key):
         while True:
             # check the node itself at first
-            if node.check():
+            flow_status = node.check(id(self.root) == id(node))
+            if flow_status:
                 # node is too big, might needs splitting
                 # try left
                 if not node.leaf or not _fix_on_sibling(self.m, node, True):
                     # try right sibling
                     if not node.leaf or not _fix_on_sibling(self.m, node, False):
-                        # no sibling is ok
-                        # TODO: peculate up, splitting
-                        # is root
-                        if id(self.root) == id(node):
-                            self.root = Node(False, m=self.m)
-                            self.root.keys = np.array([], dtype=type(key))
-                            self.root.values = np.array([node, ], dtype=Node)
-                            node.parent = self.root
-                            node.pos = -1
-                        new = Node(node.leaf, node.parent, node.pos + 1, node, node.right, m=self.m)
-                        if new.right is not None:  # update if new.right exists
-                            new.right.left = new
-                            right = new.right
-                            while right is not None:  # update all right siblings since the insertion
-                                right.pos += 1
-                                right = right.right
-                        node.right = new
-                        # Copy keys
-                        new.keys = node.keys[self.m // 2::]
-                        node.keys = node.keys[0:self.m // 2]
-                        # Copy values along with keys, might be pointers
-                        new.values = node.values[self.m // 2 + (0 if node.leaf else 1)::]
-                        node.values = node.values[0:self.m // 2 + (0 if node.leaf else 1)]
-                        # Update the parent
-                        new.parent.keys = np.insert(new.parent.keys, new.pos, new.keys[0])
-                        new.parent.values = np.insert(new.parent.values, new.pos + 1, new)
+                        if flow_status == 1:  # overfull, should split
+                            # no sibling is ok
+                            # TODO: peculate up, splitting
+                            # is root
+                            if id(self.root) == id(node):
+                                self.root = Node(False, m=self.m)
+                                self.root.keys = np.array([], dtype=type(key))
+                                self.root.values = np.array([node, ], dtype=Node)
+                                node.parent = self.root
+                                node.pos = -1
+                            new = Node(node.leaf, node.parent, node.pos + 1, node, node.right, m=self.m)
+                            if new.right is not None:  # update if new.right exists
+                                new.right.left = new
+                                right = new.right
+                                while right is not None:  # update all right siblings since the insertion
+                                    right.pos += 1
+                                    right = right.right
+                            node.right = new
+                            # Copy keys
+                            new.keys = node.keys[self.m // 2::]
+                            node.keys = node.keys[0:self.m // 2]
+                            # Copy values along with keys, might be pointers
+                            new.values = node.values[self.m // 2 + (0 if node.leaf else 1)::]
+                            node.values = node.values[0:self.m // 2 + (0 if node.leaf else 1)]
+                            # Update the parent
+                            new.parent.keys = np.insert(new.parent.keys, new.pos, new.keys[0])
+                            new.parent.values = np.insert(new.parent.values, new.pos + 1, new)
 
-                        # Prepare for the next loop
-                        key = new.keys[0]
-                        # inner node should not contain the extra node
-                        new.keys = new.keys if node.leaf else np.delete(new.keys, 0)
-                        if not new.leaf:
-                            for index, child in enumerate(new.values):
-                                child.parent = new
-                                child.pos = index - 1
-                        node = new.parent
-                        continue
+                            # Prepare for the next loop
+                            key = new.keys[0]
+                            # inner node should not contain the extra node
+                            new.keys = new.keys if node.leaf else np.delete(new.keys, 0)
+                            # update children's parent if is not leaf node
+                            if not new.leaf:
+                                for index, child in enumerate(new.values):
+                                    child.parent = new
+                                    child.pos = index - 1
+                            node = new.parent
+                            continue
+                        else:  # under-flow, should pack up
+                            # we've already checked left and right, no extra node too share, safe to pack
+                            node.keys += node.right.keys
+                            node.values += node.right.values
+                            node.parent.keys = np.delete(node.parent.keys, node.pos+1)
+                            node.parent.values = np.delete(node.parent.values, node.pos+2)
+                            temp = node.right
+                            node.right = temp.right
+                            del temp
+                            node = node.parent
+                            if id(node) == id(self.root) and len(node.keys) == 0:
+                                self.root = node.values[0]
+                                del node
+                            continue
             # break if we're not in the most inner if-else block
             break
 
 
 if __name__ == "__main__":
-    t = Tree(3)
-    t.insert(0, "Hello, world.")
-    t.insert(5, "Hello, again.")
-    t.insert(10, "Hello, hi.")
-    t.insert(15, "Hello, bad.")
-    t.insert(20, "Hello, bad.")
-    t.insert(25, "Hello, bad.")
-    t.insert(11, "bad, damn")
-    t.insert(12, "gotta ya")
-    t.insert(13, "gotta ya")
-    t.insert(14, "gotta ya")
-    t.insert(28, "gotta ya")
-    t.insert(29, "gotta ya")
-    print(t)
-    t = Tree(4)
-    t.insert(0, "Hello, world.")
-    t.insert(5, "Hello, again.")
-    t.insert(10, "Hello, hi.")
-    t.insert(15, "Hello, bad.")
-    t.insert(20, "Hello, bad.")
-    t.insert(25, "Hello, bad.")
-    t.insert(11, "bad, damn")
-    t.insert(12, "gotta ya")
-    t.insert(13, "gotta ya")
-    t.insert(14, "gotta ya")
-    t.insert(28, "gotta ya")
-    t.insert(29, "gotta ya")
+    def insert_test(t):
+        t.insert(0, "Hello, world.")
+        t.insert(5, "Hello, again.")
+        t.insert(10, "Hello, hi.")
+        t.insert(15, "Hello, bad.")
+        t.insert(20, "Hello, bad.")
+        t.insert(25, "Hello, bad.")
+        t.insert(11, "bad, damn")
+        t.insert(12, "gotta ya")
+        t.insert(13, "gotta ya")
+        t.insert(14, "gotta ya")
+        t.insert(28, "gotta ya")
+        t.insert(29, "gotta ya")
+        print(t)
+
+
+    for i in range(9, 2, -1):
+        t = Tree(i)
+        insert_test(t)
+
+    t.delete(28)
     print(t)
