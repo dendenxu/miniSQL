@@ -74,7 +74,8 @@ class Node:
         return to_string
 
 
-def _fix_parent(node, key):
+def _fix_parent(node):
+    key = node.keys[0]
     while node.parent is not None and node.pos == -1:
         node = node.parent
     if node.parent is not None:
@@ -84,21 +85,24 @@ def _fix_parent(node, key):
 
 def _fix_on_sibling(m, node, is_left, is_deleting=False):
     sibling = node.left if is_left else node.right
+    is_left = not is_left if is_deleting else is_left
     temp = node
     node = sibling if is_deleting else node
     sibling = temp if is_deleting else sibling
-    if sibling is not None and not _check(m, (len(node.keys) - 1) if is_deleting else (len(sibling.keys) + 1)):
+    if sibling is not None and node is not None and not _check(m, (len(node.keys) - 1) if is_deleting else (
+            len(sibling.keys) + 1)):
         # sibling node is good for sharing
         # TODO: move the left/right most node around
 
-        poss = [0, len(sibling.keys)]  # if checking left sibling, we insert at end and take at front
-        sibling.keys = np.insert(sibling.keys, poss[int(is_left)], node.keys[poss[int(not is_left)]])
-        sibling.values = np.insert(sibling.values, poss[int(is_left)], node.values[poss[int(not is_left)]])
+        sibling_pos = len(sibling.keys) if is_left else 0
+        node_pos = 0 if is_left else -1
+        sibling.keys = np.insert(sibling.keys, sibling_pos, node.keys[node_pos])
+        sibling.values = np.insert(sibling.values, sibling_pos, node.values[node_pos])
 
-        node.keys = np.delete(node.keys, poss[int(not is_left)])
-        node.values = np.delete(node.values, poss[int(not is_left)])
-        key = node.keys[poss[int(not is_left)]]
-        _fix_parent(node if is_left else sibling, key)
+        node.keys = np.delete(node.keys, node_pos)
+        node.values = np.delete(node.values, node_pos)
+        key = node.keys[node_pos]
+        _fix_parent(node if is_left else sibling)
         return True
     else:
         return False
@@ -143,16 +147,19 @@ class Tree:
         self.fix(node, key)
         return True
 
-     def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
-         if len(self.root.keys) == 0:
-             return False  # root is empty, cannot delete
-         node, pos, bias = self.find(key, cmp)
-         if node.keys[pos] != key:
-             return False  # cannot find the key specified
-         node.keys = np.delete(node.keys, pos)
-         node.values = np.delete(node.values, pos)
-         self.fix(node, key)
-         return True
+    def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
+        if len(self.root.keys) == 0:
+            return False  # root is empty, cannot delete
+        node, pos, bias = self.find(key, cmp)
+        if node.keys[pos] != key:
+            return False  # cannot find the key specified
+        node.keys = np.delete(node.keys, pos)
+        node.values = np.delete(node.values, pos)
+        flow_status = node.check(id(self.root) == id(node))
+        if not flow_status and pos == 0 and len(node.keys) > 0:  # manually peculate up
+            _fix_parent(node)
+        self.fix(node, key)
+        return True
 
     def fix(self, node, key):
         while True:
@@ -161,9 +168,9 @@ class Tree:
             if flow_status:
                 # node is too big, might needs splitting
                 # try left
-                if not node.leaf or not _fix_on_sibling(self.m, node, True):
+                if not node.leaf or not _fix_on_sibling(self.m, node, True, flow_status == -1):
                     # try right sibling
-                    if not node.leaf or not _fix_on_sibling(self.m, node, False):
+                    if not node.leaf or not _fix_on_sibling(self.m, node, False, flow_status == -1):
                         if flow_status == 1:  # overfull, should split
                             # no sibling is ok
                             # TODO: peculate up, splitting
@@ -205,10 +212,12 @@ class Tree:
                             continue
                         else:  # under-flow, should pack up
                             # we've already checked left and right, no extra node too share, safe to pack
-                            node.keys += node.right.keys
-                            node.values += node.right.values
-                            node.parent.keys = np.delete(node.parent.keys, node.pos+1)
-                            node.parent.values = np.delete(node.parent.values, node.pos+2)
+                            if node.right is None:
+                                node = node.left
+                            node.keys = np.concatenate((node.keys, node.right.keys))
+                            node.values = np.concatenate((node.values, node.right.values))
+                            node.parent.keys = np.delete(node.parent.keys, node.pos + 1)
+                            node.parent.values = np.delete(node.parent.values, node.pos + 2)
                             temp = node.right
                             node.right = temp.right
                             del temp
@@ -243,4 +252,14 @@ if __name__ == "__main__":
         insert_test(t)
 
     t.delete(28)
+    print(t)
+    t.delete(29)
+    print(t)
+
+    t = Tree(5)
+    insert_test(t)
+    t.delete(20)
+    t.delete(25)
+    t.delete(28)
+    t.delete(29)
     print(t)
