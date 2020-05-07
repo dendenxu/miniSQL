@@ -142,7 +142,7 @@ class Tree:
         # update info on the leaf node
         node.keys.insert(pos, key)
         node.values.insert(pos, value)
-        self.fix(node, key)
+        self._fix(node, key)
         return True
 
     def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
@@ -156,10 +156,10 @@ class Tree:
         flow_status = node.check(id(self.root) == id(node))
         if not flow_status and pos == 0 and len(node.keys) > 0:  # manually peculate up
             _fix_parent(node)
-        self.fix(node, key)
+        self._fix(node, key)
         return True
 
-    def fix(self, node, key):
+    def _fix(self, node, key):
         while True:
             # check the node itself at first
             flow_status = node.check(id(self.root) == id(node))
