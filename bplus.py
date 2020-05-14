@@ -1,3 +1,5 @@
+EMPTY_TREE = -1
+
 def search(items, key, cmp=lambda x, y: x < y):
     """
     binary search
@@ -125,6 +127,24 @@ class Tree:
                 deque.append("\n")
         return to_string
 
+    @property
+    def min(self):
+        if not len(self.root.values):
+            return EMPTY_TREE
+        node = self.root
+        while not node.leaf:
+            node = node.values[0]
+        return node.keys[0], node.values[0]
+
+    @property
+    def max(self):
+        if not len(self.root.values):
+            return EMPTY_TREE
+        node = self.root
+        while not node.leaf:
+            node = node.values[-1]
+        return node.keys[-1], node.values[-1]
+
     def find(self, key):
         return self.root.find(key, self.cmp)
 
@@ -145,10 +165,11 @@ class Tree:
         self._fix(node, key)
         return True
 
-    def delete(self, key, cmp=lambda x, y: x < y, del_all=False):
+    def delete(self, key, node=None, pos=None, bias=None):
         if len(self.root.keys) == 0:
             return False  # root is empty, cannot delete
-        node, pos, bias = self.find(key)
+        if node is None or pos is None or bias is None:
+            node, pos, bias = self.find(key)
         if node.keys[pos] != key:
             return False  # cannot find the key specified
         del node.keys[pos]
@@ -280,4 +301,8 @@ if __name__ == "__main__":
     t.insert("29", "gotta ya")
     t.insert("29", "gotta ya")
     t.insert("29", "gotta ya")
+
     print(t)
+
+    print(t.min)
+    print(t.max)
