@@ -267,10 +267,16 @@ class Tree:
             break
 
 
+class PositionList:
+    def __getitem__(self, item):
+        return item
+
+
 class SortedList:
     def __init__(self, cmp=lambda x, y: x < y, replace=False):
         self.cmp = cmp
         self.root = Node()  # a single node as list
+        self.root.values = PositionList()  # should return 1 if you call root.values[1]
 
     def find(self, key):
         return self.root.find(key)
@@ -285,7 +291,6 @@ class SortedList:
             return DUPLICATED_KEY
         # update info on the leaf node
         node.keys.insert(pos, key)
-        node.values.insert(pos, pos)
         return True
 
     def delete(self, key, node=None, pos=None, bias=None):

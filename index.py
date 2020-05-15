@@ -4,11 +4,40 @@ from constants import *
 
 """
 API Specification
-create_index(table_name,attribute_index)返回index_index
-drop_index(index_index)返回行号范围{ind}
-insert(index_index,value)
-delete(index_index,value)【分为value和range】并返回行号ind【或{ind}】
-search_value(index_index,value)或search_range(index_index,val1,val2)返回ind或{ind}
+def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
+    :param data_list: the data, as list, to create index on
+    :param cmp: the comparator of the index, defaults to operator<
+    :param is_primary: whether we're dealing with primary key, using sorted list
+    :return: index of the newly created table
+    
+def drop_index(ind):
+    :param ind: the id of the index
+    :return: currently nothing is returned
+    
+def insert(ind, key, value, is_replace=False):
+    :param ind: the id of the index
+    :param key: the key to insert into the index
+    :param value: the value of the B+ tree, probably the line number of the inserted item
+    :param is_replace: whether we should replace on duplication
+    :return: the inserted position of the new key, probably the last of the whole table
+    
+def search(ind, key):
+    A thin wrapper around _operate
+    :param ind: the id of the index to be deleted on
+    :param key: the key/keys to be deleted (single or range)
+    :return: currently nothing is returned
+    
+def delete(ind, key):
+    A thin wrapper around _operate
+    :param ind: the id of the index to be searched on
+    :param key: the key/keys to be searched (single or range)
+    :return: currently nothing is returned
+    
+def update_values(ind, values):
+    updates information about an index
+    :param ind:
+    :param values:
+    :return:
 """
 
 
