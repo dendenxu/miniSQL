@@ -1,5 +1,6 @@
 import buffer
-from bplus import Tree, EMPTY_TREE
+from bplus import Tree, SortedList
+from constants import *
 
 """
 API Specification
@@ -9,12 +10,6 @@ insert(index_index,value)
 delete(index_index,value)【分为value和range】并返回行号ind【或{ind}】
 search_value(index_index,value)或search_range(index_index,val1,val2)返回ind或{ind}
 """
-DUPLICATED_KEY = -1
-CANNOT_FIND_KEY = -2
-START_BIGGER_THAN_END = -3
-START_BIGGER_THAN_MAX = -4
-MIN_BIGGER_THAN_END = -5
-RANGE_IS_OK = -6
 
 
 def _check_range(t, keys):
@@ -30,15 +25,19 @@ def _check_range(t, keys):
         return RANGE_IS_OK
 
 
-def create_index(data_list, cmp=lambda x, y: x < y):
+def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
     """
     :param data_list: the data, as list, to create index on
     :param cmp: the comparator of the index, defaults to operator<
+    :param is_primary: whether we're dealing with primary key, using sorted list
     :return: index of the newly created table
     """
-    # TODO: dynamically compute the M value of the B+ tree
-    # TODO: what if you're out of memory
-    t = Tree(m=6, cmp=cmp)
+    if is_primary:
+        t = SortedList()
+    else:
+        # TODO: dynamically compute the M value of the B+ tree
+        # TODO: what if you're out of memory
+        t = Tree(m=6, cmp=cmp)
     for data, index in enumerate(data_list):
         # TODO: what happens if you get an error from the B+ tree
         t.insert(data, index)  # insert data as key and line number as value
@@ -191,3 +190,38 @@ def delete(ind, key):
     :return: currently nothing is returned
     """
     return _operate_range(ind, key, is_search=False)
+
+
+def update_values(ind, values):
+    """
+    updates information about an index
+    :param ind:
+    :param values:
+    :return:
+    """
+    t = buffer.get_index(ind)
+    _, _, node_a = t.min
+    _, _, node_z = t.max
+    if node_a == node_z:
+        for pos in range(len(node_a.values)):
+            node_a.values[pos] = values[pos]
+    else:
+        count = 0
+        # handle node_a
+        for pos in range(0, len(node_a.values)):
+            node_a.values[pos] = values[count]
+            count += 1
+        # handle nodes between node_a and node_z (not including)
+        node = node_a
+        # if node_a is already node_z, don't do anything
+        while node != node_z:
+            # delete everything in between onw by one
+            for pos in range(0, len(node.values)):
+                node.values[pos] = values[count]
+                count += 1
+            # go to another node
+            node = node.right
+        # handle node_a
+        for pos in range(0, len(node_z.values)):
+            node_z.values[pos] = values[count]
+            count += 1

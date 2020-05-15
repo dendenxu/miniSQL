@@ -1,4 +1,4 @@
-EMPTY_TREE = -1
+from constants import *
 
 
 def search(items, key, cmp=lambda x, y: x < y):
@@ -73,6 +73,18 @@ class Node:
         to_string += ":"
         return to_string
 
+    @property
+    def empty(self):
+        return len(self.values) == 0
+
+    @property
+    def min(self):
+        return self.keys[0], self.values[0], self
+
+    @property
+    def max(self):
+        return self.keys[-1], self.values[-1], self
+
 
 def _fix_parent(node):
     key = node.keys[0]
@@ -138,8 +150,8 @@ class Tree:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
-            node = node.values[0]
-        return node.keys[0], node.values[0]
+            node = node.min[1]
+        return node.min
 
     @property
     def max(self):
@@ -147,21 +159,21 @@ class Tree:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
-            node = node.values[-1]
-        return node.keys[-1], node.values[-1]
+            node = node.max[1]
+        return node.max
 
     def find(self, key):
         return self.root.find(key, self.cmp)
 
-    def insert(self, key, value, replace=False):
-        if len(self.root.keys) == 0:
+    def insert(self, key, value, is_replace=False):
+        if self.root.empty:
             self.root.keys = [key, ]
             self.root.values = [value, ]
             return True
         node, pos, bias = self.find(key)
-        if node.values[pos] == key and not replace:
+        if node.values[pos] == key and not is_replace:
             # Duplication and should not replace
-            return False
+            return DUPLICATED_KEY
         # print(node, pos, bias)
         pos += bias
         # update info on the leaf node
@@ -171,12 +183,12 @@ class Tree:
         return True
 
     def delete(self, key, node=None, pos=None, bias=None):
-        if len(self.root.keys) == 0:
-            return False  # root is empty, cannot delete
+        if self.root.empty:
+            return EMPTY_TREE  # root is empty, cannot delete
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
         if node.keys[pos] != key:
-            return False  # cannot find the key specified
+            return CANNOT_FIND_KEY  # cannot find the key specified
         del node.keys[pos]
         del node.values[pos]
         flow_status = node.check(id(self.root) == id(node))
@@ -255,6 +267,38 @@ class Tree:
             break
 
 
+class SortedList:
+    def __init__(self, cmp=lambda x, y: x < y, replace=False):
+        self.cmp = cmp
+        self.root = Node()  # a single node as list
+
+    def find(self, key):
+        return self.root.find(key)
+
+    def insert(self, key, is_replace=False):
+        if self.root.empty:
+            self.root.keys = [key, ]
+            return True
+        node, pos, _ = self.root.find(key)
+        if node.values[pos] == key and not is_replace:
+            # Duplication and should not replace
+            return DUPLICATED_KEY
+        # update info on the leaf node
+        node.keys.insert(pos, key)
+        node.values.insert(pos, pos)
+        return True
+
+    def delete(self, key, node=None, pos=None, bias=None):
+        if self.root.empty:
+            return EMPTY_TREE  # root is empty, cannot delete
+        if node is None or pos is None or bias is None:
+            node, pos, bias = self.find(key)
+        if node.keys[pos] != key:
+            return CANNOT_FIND_KEY  # cannot find the key specified
+        del node.keys[pos]
+        return True
+
+
 if __name__ == "__main__":
     def insert_test(t):
         t.insert(0, "Hello, world.")
@@ -277,7 +321,8 @@ if __name__ == "__main__":
     for i in range(9, 2, -1):
         t = Tree(i)
         insert_test(t)
-
+    t = Tree(2)
+    insert_test(t)
     t.delete(28)
     print(t)
     t.delete(29)
