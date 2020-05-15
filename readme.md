@@ -7,6 +7,7 @@
 - `constants.py` declares constant values in one place for miniSQL, mostly return values
 - `readme.md` contains basic information about this project, and I'm `readme.md`
 - `.gitignore` contains things git should ignore when updating repository
+- `.idea` contains file of PyCharm settings. Shouldn't appear in the repository but it makes PyCharm user happy. Ignore it if you don't use PyCharm
 
 ## Index Manager API
 
