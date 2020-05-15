@@ -1,5 +1,5 @@
 import buffer
-from bplus import Tree
+from bplus import Tree, EMPTY_TREE
 
 """
 API Specification
@@ -15,6 +15,19 @@ START_BIGGER_THAN_END = -3
 START_BIGGER_THAN_MAX = -4
 MIN_BIGGER_THAN_END = -5
 RANGE_IS_OK = -6
+
+
+def _check_range(t, keys):
+    if t.empty:
+        return EMPTY_TREE
+    elif t.cmp(keys[-1], keys[0]):
+        return START_BIGGER_THAN_END
+    elif t.cmp(keys[-1], t.min[0]):
+        return MIN_BIGGER_THAN_END
+    elif t.cmp(t.max[0], keys[0]):
+        return START_BIGGER_THAN_MAX
+    else:
+        return RANGE_IS_OK
 
 
 def create_index(data_list, cmp=lambda x, y: x < y):
@@ -39,6 +52,7 @@ def drop_index(ind):
     :param ind: the id of the index
     :return: currently nothing is returned
     """
+    # TODO: what if buffer cannot handle this deletion
     buffer.delete_index(ind)
 
 
@@ -63,142 +77,7 @@ def insert(ind, key, value, is_replace=False):
             t.delete(key, node, pos, bias)
     # TODO: what if we cannot insert? e.g. out of space
     t.insert(key, value)
-
-
-def _check_range(t, keys):
-    if t.cmp(keys[-1], keys[0]):
-        return START_BIGGER_THAN_END
-    elif t.cmp(keys[-1], t.min[0]):
-        return MIN_BIGGER_THAN_END
-    elif t.cmp(t.max[0], keys[0]):
-        return START_BIGGER_THAN_MAX
-    else:
-        return RANGE_IS_OK
-
-
-def _delete_single(t, key):
-    """
-    :param t: the B+ tree we've got
-    :param key: the key to delete
-    :return: information if deletion failed
-    """
-    node, pos, bias = t.find(key)
-    if node.keys[pos] == key:
-        t.delete(None, node, pos, bias)
-    else:
-        return CANNOT_FIND_KEY
-
-
-def _delete_range(t, keys):
-    """
-    :param t: the tree in consideration
-    :param keys: the two keys to be deleted, start and end
-    :return: error info if error
-    """
-    # get information about the beginning and ending
-    node_a, pos_a, bias_a = t.find(keys[0])
-    node_z, pos_z, bias_z = t.find(keys[-1])
-    _ = 1
-    # valid range:
-    # start <= end
-    # start <= max
-    # min <= end
-    range_check_result = _check_range(t, keys)
-    if range_check_result != RANGE_IS_OK:
-        return range_check_result
-    else:
-        if node_a != node_z:
-            # handle node_a
-            for pos in range(pos_a, len(node_a.keys)):
-                t.delete(None, node_a, pos, _)
-            # handle nodes between node_a and node_z (not including)
-            node = node_a
-            # if node_a is already node_z, don't do anything
-            while node != node_z:
-                # delete everything in between onw by one
-                for pos in range(0, len(node.keys)):
-                    t.delete(None, node, pos, 0)
-                # go to another node
-                node = node.right
-            # handle node_a
-            for pos in range(0, pos_z + 1):
-                t.delete(None, node_z, pos, _)
-        else:
-            # handle only this node if start and end is in the same node
-            for pos in range(pos_a, pos_z + 1):
-                t.delete(None, node_a, pos, _)
-
-
-def delete(ind, key):
-    """
-    A thin wrapper around _delete_single and _delete_range
-    :param ind: the id of the index to be deleted on
-    :param key: the key/keys to be deleted (single or range)
-    :return: currently nothing is returned
-    """
-    assert len(key) == 2 or len(key) == 1, "The length of the key/keys should be one (single) or two (range)"
-    # TODO: what if we cannot get what we want
-    t = buffer.get_index(ind)
-    if len(key) == 2:
-        return _delete_range(t, key)
-    else:
-        return _delete_single(t, key)
-
-
-def _search_single(t, key):
-    """
-    :param t: the B+ tree we've got
-    :param key: the key to search for
-    :return: information if deletion failed
-    """
-    node, pos, bias = t.find(key)
-    if node.keys[pos] == key:
-        return node.values[pos]
-    else:
-        return CANNOT_FIND_KEY
-
-
-def _search_range(t, keys):
-    """
-    :param t: the tree in consideration
-    :param keys: the two keys to be searched, start and end
-    :return: error info if error
-    """
-    # get information about the beginning and ending
-    node_a, pos_a, bias_a = t.find(keys[0])
-    node_z, pos_z, bias_z = t.find(keys[-1])
-    _ = 1
-    # valid range:
-    # start <= end
-    # start <= max
-    # min <= end
-    values = []
-    range_check_result = _check_range(t, keys)
-    if range_check_result != RANGE_IS_OK:
-        return range_check_result
-    else:
-        if node_a != node_z:
-            # handle node_a
-            for pos in range(pos_a, len(node_a.keys)):
-                values.append(node_a.values[pos])
-            # handle nodes between node_a and node_z (not including)
-            node = node_a
-            # if node_a is already node_z, don't do anything
-            while node != node_z:
-                # delete everything in between onw by one
-                for pos in range(0, len(node.keys)):
-                    values.append(node.values[pos])
-                # go to another node
-                node = node.right
-            # handle node_a
-            for pos in range(0, pos_z + 1):
-                values.append(node_z.values[pos])
-        else:
-            # handle only this node if start and end is in the same node
-            for pos in range(pos_a, pos_z + 1):
-                values.append(node_a.values[pos])
-
-    return values
+    return buffer.save_index(t)
 
 
 def _operate_single(t, key, is_search):
@@ -214,6 +93,7 @@ def _operate_single(t, key, is_search):
             return node.values[pos]
         else:
             t.delete(None, node, pos, bias)
+            return buffer.save_index(t)
     else:
         return CANNOT_FIND_KEY
 
@@ -272,19 +152,42 @@ def _operate_range(t, keys, is_search):
                     t.delete(None, node_a, pos, _)
     if is_search:
         return values
+    else:
+        return buffer.save_index(t)
 
 
-def search(ind, key):
+def _operate(ind, key, is_search):
     """
-    A thin wrapper around _delete_single and _delete_range
-    :param ind: the id of the index to be searched on
-    :param key: the key/keys to be searched (single or range)
+    A thin wrapper around _operate_single and _operate_range
+    :param ind: the id of the index to be deleted on
+    :param key: the key/keys to be deleted (single or range)
+    :param is_search: whether we're searching
     :return: currently nothing is returned
     """
     assert len(key) == 2 or len(key) == 1, "The length of the key/keys should be one (single) or two (range)"
     # TODO: what if we cannot get what we want
     t = buffer.get_index(ind)
     if len(key) == 2:
-        return _delete_range(t, key)
+        return _operate_range(t, key, is_search)
     else:
-        return _delete_single(t, key)
+        return _operate_single(t, key, is_search)
+
+
+def search(ind, key):
+    """
+    A thin wrapper around _operate
+    :param ind: the id of the index to be deleted on
+    :param key: the key/keys to be deleted (single or range)
+    :return: currently nothing is returned
+    """
+    return _operate_range(ind, key, is_search=True)
+
+
+def delete(ind, key):
+    """
+    A thin wrapper around _operate
+    :param ind: the id of the index to be searched on
+    :param key: the key/keys to be searched (single or range)
+    :return: currently nothing is returned
+    """
+    return _operate_range(ind, key, is_search=False)

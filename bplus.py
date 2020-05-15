@@ -1,5 +1,6 @@
 EMPTY_TREE = -1
 
+
 def search(items, key, cmp=lambda x, y: x < y):
     """
     binary search
@@ -128,8 +129,12 @@ class Tree:
         return to_string
 
     @property
+    def empty(self):
+        return len(self.root.values) == 0
+
+    @property
     def min(self):
-        if not len(self.root.values):
+        if self.empty:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
@@ -138,7 +143,7 @@ class Tree:
 
     @property
     def max(self):
-        if not len(self.root.values):
+        if self.empty:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
