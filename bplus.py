@@ -171,7 +171,7 @@ class Tree:
             self.root.values = [value, ]
             return True
         node, pos, bias = self.find(key)
-        if node.values[pos] == key and not is_replace:
+        if node.keys[pos] == key and not is_replace:
             # Duplication and should not replace
             return DUPLICATED_KEY
         # print(node, pos, bias)
@@ -279,14 +279,14 @@ class SortedList:
         self.root.values = PositionList()  # should return 1 if you call root.values[1]
 
     def find(self, key):
-        return self.root.find(key)
+        return self.root.find(key, self.cmp)
 
     def insert(self, key, is_replace=False):
         if self.root.empty:
             self.root.keys = [key, ]
             return True
-        node, pos, _ = self.root.find(key)
-        if node.values[pos] == key and not is_replace:
+        node, pos, _ = self.find(key)
+        if node.keys[pos] == key and not is_replace:
             # Duplication and should not replace
             return DUPLICATED_KEY
         # update info on the leaf node
