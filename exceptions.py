@@ -5,6 +5,10 @@ try and catch stuff
 
 
 class KeyException(Exception):
+    """
+    raised when we cannot find a particular key
+    or duplication occurs
+    """
     def __init__(self, message, errors=None):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
@@ -14,6 +18,13 @@ class KeyException(Exception):
 
 
 class RangeException(Exception):
+    """
+    raised when range is invalid
+    for example when:
+    front > end
+    front > max
+    min > end
+    """
     def __init__(self, message, errors=None):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
@@ -23,6 +34,10 @@ class RangeException(Exception):
 
 
 class TreeException(Exception):
+    """
+    Tree is empty
+    or SortedListIsEmpty
+    """
     def __init__(self, message, errors=None):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)

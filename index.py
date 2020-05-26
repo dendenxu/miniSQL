@@ -4,6 +4,15 @@ from exceptions import *
 
 
 def _check_range(t, keys):
+    """
+    check whether range is OK
+    raise exceptions if not OK
+
+    :param t: the t to check
+    :param keys: the key(s) whose range is to be checked
+    :raise TreeException: empty tree
+    :raise RangeException: range is invalid
+    """
     if t.empty:
         raise TreeException("Tree {} is empty".format(id(t)), t)
     elif t.cmp(keys[-1], keys[0]):
@@ -32,7 +41,7 @@ def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
         t.insert(data, index)  # insert data as key and line number as value
 
     # TODO: what happens if the disk is full and you cannot save the index on disk?
-    buffer.save_index(t)
+    return buffer.save_index(t)
 
 
 def drop_index(ind):
@@ -50,7 +59,7 @@ def insert(ind, key, value, is_replace=False):
     :param key: the key to insert into the index
     :param value: the value of the B+ tree, probably the line number of the inserted item
     :param is_replace: whether we should replace on duplication
-    :return: the inserted position of the new key, probably the last of the whole table
+    :raise KeyException: duplication
     """
     # TODO: what if we cannot get what we want
     t = buffer.get_index(ind)
@@ -73,7 +82,8 @@ def _operate_single(t, key, is_search):
     :param t: the B+ tree we've got
     :param key: the key to delete
     :param is_search: whether we're doing a search
-    :return: information if deletion failed
+    :return: searched key
+    :raise KeyException: cannot find key
     """
     node, pos, bias = t.find(key)
     if node.keys[pos] == key:
