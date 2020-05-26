@@ -63,15 +63,11 @@ def insert(ind, key, value, is_replace=False):
     """
     # TODO: what if we cannot get what we want
     t = buffer.get_index(ind)
-    node, pos, bias = t.find(key)
-    if node.keys[pos] == key:
-        if not is_replace:
-            # Duplication and should not replace
-            raise KeyException("Duplicated key {} in tree {}".format(key, id(t)), (key, t))
-        else:
-            # TODO: what happens if the delete operation returns false
-            # Although we cannot think of a situation for that
-            t.delete(key, node, pos, bias)
+    try:
+        t.delete(key)
+    except MiniSQLException as e:
+        if not isinstance(e, KeyException) and not isinstance(e, TreeException):
+            raise e
     # TODO: what if we cannot insert? e.g. out of space
     t.insert(key, value)
     buffer.save_index(t)
@@ -133,14 +129,14 @@ def _operate_range(t, keys, is_search):
             # go to another node
             node = node.right
         # handle node_a
-        for pos in range(0, pos_z + 1):
+        for pos in range(0, pos_z):
             if is_search:
                 values.append(node_z.values[pos])
             else:
                 t.delete(None, node_z, pos, _)
     else:
         # handle only this node if start and end is in the same node
-        for pos in range(pos_a, pos_z + 1):
+        for pos in range(pos_a, pos_z):
             if is_search:
                 values.append(node_a.values[pos])
             else:
@@ -175,7 +171,7 @@ def search(ind, key):
     :param key: the key/keys to be deleted (single or range)
     :return: currently nothing is returned
     """
-    return _operate_range(ind, key, is_search=True)
+    return _operate(ind, key, is_search=True)
 
 
 def delete(ind, key):
@@ -185,7 +181,7 @@ def delete(ind, key):
     :param key: the key/keys to be searched (single or range)
     :return: currently nothing is returned
     """
-    return _operate_range(ind, key, is_search=False)
+    return _operate(ind, key, is_search=False)
 
 
 def update_values(ind, values):

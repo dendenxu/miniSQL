@@ -188,7 +188,7 @@ class Tree:
     This feature enables us to implement tree like data structure in Python quite easily
     """
 
-    def __init__(self, m=4, cmp=lambda x, y: x < y, is_replace=False):
+    def __init__(self, m=4, cmp=lambda x, y: x < y):
         self.m = m
         self.cmp = cmp
         self.root = Node(True, m=self.m)  # initially the root is also a leaf
@@ -396,7 +396,7 @@ class SortedList:
     It should only contain values, but not key
     """
 
-    def __init__(self, cmp=lambda x, y: x < y, replace=False):
+    def __init__(self, cmp=lambda x, y: x < y):
         self.cmp = cmp
         self.root = Node()  # a single node as list
         self.root.values = PositionList()  # should return 1 if you call root.values[1]
@@ -418,7 +418,7 @@ class SortedList:
 
     def delete(self, key, node=None, pos=None, bias=None):
         if self.root.empty:
-            raise TreeException("SortedList {} is empty".format(id(self)), (self))  # root is empty, cannot delete
+            raise TreeException("SortedList {} is empty".format(id(self)), self)  # root is empty, cannot delete
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
         if node.keys[pos] != key:
