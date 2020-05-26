@@ -24,7 +24,7 @@ def search(items, key, cmp=lambda x, y: x < y):
 
 def _check(m, n, is_root=False):
     """
-    Check whether a node is full, needing splitting or merging
+    Check whether a node is over-full or under-full, needs splitting or merging
 
     :param m:
     :param n:
@@ -96,7 +96,7 @@ class Node:
         :return: the converted string
         """
         to_string = ""
-        for i in range(self.m - 1):  # we've limited the range to self.m - 1, so the overful node won't be printed
+        for i in range(self.m - 1):  # we've limited the range to self.m - 1, so the over-full node won't be printed
             to_string += ":{}".format(' ' if i >= len(self.keys) else self.keys[i])
         to_string += ":"
         return to_string
@@ -279,6 +279,15 @@ class Tree:
         return True
 
     def _fix(self, node, key):
+        """
+        Fix a node if it's over-full or under-full, iteratively peculate up to fix the node's parent
+        uses _check to determine we're deleting or inserting
+        TODO: check why are we needing key here? I've forgotten it.
+
+        :param node: the node we should try to fix
+        :param key: the key
+        :return:
+        """
         while True:
             # check the node itself at first
             # print(self)
