@@ -96,7 +96,7 @@ class Node:
         :return: the converted string
         """
         to_string = ""
-        for i in range(self.m - 1):
+        for i in range(self.m - 1):  # we've limited the range to self.m - 1, so the overful node won't be printed
             to_string += ":{}".format(' ' if i >= len(self.keys) else self.keys[i])
         to_string += ":"
         return to_string
@@ -281,6 +281,7 @@ class Tree:
     def _fix(self, node, key):
         while True:
             # check the node itself at first
+            # print(self)
             flow_status = node.check(id(self.root) == id(node))
             if flow_status:
                 # node is too big, might needs splitting
@@ -390,6 +391,7 @@ if __name__ == "__main__":
         t.insert(0, "Hello, world.")
         t.insert(5, "Hello, again.")
         t.insert(10, "Hello, hi.")
+        # print(t)
         t.insert(15, "Hello, bad.")
         t.insert(20, "Hello, bad.")
         t.insert(25, "Hello, bad.")
@@ -408,6 +410,10 @@ if __name__ == "__main__":
         print("Currently tesing tree with m={}".format(i))
         t = Tree(i)
         insert_test(t)
+    # don't try this, since when m = 2, some of the insertion splitting case is undifine
+    # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
+    # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
+    # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 sh`ould be deleted here!
     # t = Tree(2)
     # insert_test(t)
     t.delete(28)
