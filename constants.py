@@ -2,10 +2,30 @@
 Considering changing constant return value to exception
 try and catch stuff
 """
-DUPLICATED_KEY = -1
-CANNOT_FIND_KEY = -2
-START_BIGGER_THAN_END = -3
-START_BIGGER_THAN_MAX = -4
-MIN_BIGGER_THAN_END = -5
-RANGE_IS_OK = -6
-EMPTY_TREE = -7
+
+
+class KeyRefException(Exception):
+    def __init__(self, message, errors=None):
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
+        # Now for your custom code...
+        self.errors = errors
+
+
+class RangeException(Exception):
+    def __init__(self, message, errors=None):
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
+        # Now for your custom code...
+        self.errors = errors
+
+
+class TreeException(Exception):
+    def __init__(self, message, errors=None):
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
+        # Now for your custom code...
+        self.errors = errors

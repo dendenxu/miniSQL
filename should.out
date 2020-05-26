@@ -1,0 +1,68 @@
+Currently tesing tree with m=9
+Duplicated key 29 in tree 2270291590536
+|:12: : : : : : : :|
+|:0:5:10:11: : : : :|:12:13:14:15:20:25:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Currently tesing tree with m=8
+Duplicated key 29 in tree 2270291614024
+|:13: : : : : : :|
+|:0:5:10:11:12: : :|:13:14:15:20:25:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Currently tesing tree with m=7
+Duplicated key 29 in tree 2270291589640
+|:14: : : : : :|
+|:0:5:10:11:12:13:|:14:15:20:25:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Currently tesing tree with m=6
+Duplicated key 29 in tree 2270291614920
+|:13:20: : : :|
+|:0:5:10:11:12:|:13:14:15: : :|:20:25:28:29: :|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Currently tesing tree with m=5
+Duplicated key 29 in tree 2270291615432
+|:12:20: : :|
+|:0:5:10:11:|:12:13:14:15:|:20:25:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Currently tesing tree with m=4
+Duplicated key 29 in tree 2270291656904
+|:20: : :|
+|:11:13: :|:28: : :|
+|:0:5:10:|:11:12: :|:13:14:15:|:20:25: :|:28:29: :|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Currently tesing tree with m=3
+Duplicated key 29 in tree 2270291658440
+|:12:20:|
+|:10: :|:14: :|:28: :|
+|:0:5:|:10:11:|:12:13:|:14:15:|:20:25:|:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+Duplicated key 29 in tree 2270291660424
+|:12:20:|
+|:10: :|:14: :|:28: :|
+|:0:5:|:10:11:|:12:13:|:14:15:|:20:25:|:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+|:12:20:|
+|:10: :|:14: :|:29: :|
+|:0:5:|:10:11:|:12:13:|:14:15:|:20:25:|:29: :|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|
+|:12:20:|
+|:10: :|:14: :|:25: :|
+|:0:5:|:10:11:|:12:13:|:14:15:|:20: :|:25: :|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|
+Duplicated key 29 in tree 2270291723848
+|:12:20: : :|
+|:0:5:10:11:|:12:13:14:15:|:20:25:28:29:|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|
+|:12:14: : :|
+|:0:5:10:11:|:12:13: : :|:14:15: : :|
+|Hello, world.|Hello, again.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|
+Duplicated key 29 in tree 2270291724424
+|:25: : :|
+|:12:14: :|:29: : :|
+|:0:10:11:|:12:13: :|:14:15:20:|:25:28: :|:29:5: :|
+|Hello, world.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|Hello, again.|
+|:25: : :|
+|:12:14: :|:29: : :|
+|:0:10:11:|:12:13: :|:14:15:20:|:25:28: :|:29:5: :|
+|Hello, world.|Hello, hi.|bad, damn|gotta ya|gotta ya|gotta ya|Hello, bad.|Hello, bad.|Hello, bad.|gotta ya|gotta ya|Hello, again.|
+('0', 'Hello, world.', <__main__.Node object at 0x0000021097EE8848>)
+('5', 'Hello, again.', <__main__.Node object at 0x0000021097EE8CC8>)

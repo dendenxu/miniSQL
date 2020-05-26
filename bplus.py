@@ -1,3 +1,16 @@
+"""
+Theoretically this implementation of B+ tree in Python
+should support any data type in python
+to avoid introducing complexity and to program natively
+we don't import 3rd party package to this implementation of B+ tree
+
+However if we're to optimize for operations on large trunk of data
+we can import numpy as np as change data structures to np.array
+
+Moreover there's implementation of BPlusTree in python already, if we're to be lazy
+we can simply pip install bplustree
+and from bplustree import BPlusTree
+"""
 from constants import *
 
 
@@ -166,6 +179,16 @@ def _fix_on_sibling(m, node, is_left, is_deleting=False):
 
 
 class Tree:
+    """
+    We use the property of storing only memory address of Object of Python
+    for example, if Object() is initialized to variable a
+    and we assign variable a to b
+    b won't be copying full content of a in memory
+    instead we'd store pointer to a in b
+
+    This feature enables us to implement tree like data structure in Python quite easily
+    """
+
     def __init__(self, m=4, cmp=lambda x, y: x < y, replace=False):
         self.m = m
         self.cmp = cmp
@@ -197,7 +220,7 @@ class Tree:
     @property
     def min(self):
         if self.empty:
-            return EMPTY_TREE
+            raise TreeException("Tree {} is empty".format(id(self)))
         node = self.root
         while not node.leaf:
             node = node.min[1]
@@ -206,7 +229,7 @@ class Tree:
     @property
     def max(self):
         if self.empty:
-            return EMPTY_TREE
+            raise TreeException("Tree {} is empty".format(id(self)))
         node = self.root
         while not node.leaf:
             node = node.max[1]
@@ -241,13 +264,13 @@ class Tree:
         node, pos, bias = self.find(key)
         if node.keys[pos] == key and not is_replace:
             # Duplication and should not replace
-            return DUPLICATED_KEY
+            raise KeyRefException("Duplicated key {} in tree {}".format(key, id(self)))
         # print(node, pos, bias)
         pos += bias
         # update info on the leaf node
         node.keys.insert(pos, key)
         node.values.insert(pos, value)
-        self._fix(node, key)
+        self._fix(node)
         return True
 
     def delete(self, key, node=None, pos=None, bias=None):
@@ -263,29 +286,28 @@ class Tree:
         """
         # Whole tree might be empty
         if self.root.empty:
-            return EMPTY_TREE  # root is empty, cannot delete
+            raise TreeException("Tree {} is empty".format(id(self)))  # root is empty, cannot delete
         # find the key if not already specified
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
         # is the key matched with the position
         if node.keys[pos] != key:
-            return CANNOT_FIND_KEY  # cannot find the key specified
+            raise KeyRefException("Cannot find key {} in tree {}".format(key, id(self)))
+            # cannot find the key specified
         del node.keys[pos]
         del node.values[pos]
         flow_status = node.check(id(self.root) == id(node))
         if not flow_status and pos == 0 and len(node.keys) > 0:  # manually peculate up
             _fix_parent(node)
-        self._fix(node, key)
+        self._fix(node)
         return True
 
-    def _fix(self, node, key):
+    def _fix(self, node):
         """
         Fix a node if it's over-full or under-full, iteratively peculate up to fix the node's parent
         uses _check to determine we're deleting or inserting
-        TODO: check why are we needing key here? I've forgotten it.
 
         :param node: the node we should try to fix
-        :param key: the key
         :return:
         """
         while True:
@@ -303,21 +325,24 @@ class Tree:
                 break
             if flow_status == 1:  # overfull, should split
                 # no sibling is ok
-                # TODO: peculate up, splitting
                 # is root
                 if id(self.root) == id(node):
-                    self.root = Node(False, m=self.m)
-                    self.root.keys = []
-                    self.root.values = [node, ]
-                    node.parent = self.root
-                    node.pos = -1
+                    self.root = Node(False, m=self.m)  # initialize the new root node
+                    self.root.keys = []  # initialize keys
+                    self.root.values = [node, ]  # initialize values
+                    node.parent = self.root  # update parent of current node
+                    node.pos = -1  # position begins from -1
+
+                # new node is the right node to be split to
                 new = Node(node.leaf, node.parent, node.pos + 1, node, node.right, m=self.m)
                 if new.right is not None:  # update if new.right exists
                     new.right.left = new
                     right = new.right
                     while right is not None:  # update all right siblings since the insertion
-                        right.pos += 1
+                        right.pos += 1  # this might should keep consistency of information
                         right = right.right
+
+                # update left right pointer
                 node.right = new
                 # Copy keys
                 new.keys = node.keys[self.m // 2::]
@@ -329,8 +354,6 @@ class Tree:
                 new.parent.keys.insert(new.pos, new.keys[0])
                 new.parent.values.insert(new.pos + 1, new)
 
-                # Prepare for the next loop
-                key = new.keys[0]
                 # inner node should not contain the extra node
                 if not node.leaf:
                     del new.keys[0]
@@ -360,11 +383,21 @@ class Tree:
 
 
 class PositionList:
+    """
+    This is a data structure that
+    returns the position when trying to retrieve information at a certain position
+    """
+
     def __getitem__(self, item):
         return item
 
 
 class SortedList:
+    """
+    This should provide similar interface as B+ tree
+    It should only contain values, but not key
+    """
+
     def __init__(self, cmp=lambda x, y: x < y, replace=False):
         self.cmp = cmp
         self.root = Node()  # a single node as list
@@ -380,59 +413,84 @@ class SortedList:
         node, pos, _ = self.find(key)
         if node.keys[pos] == key and not is_replace:
             # Duplication and should not replace
-            return DUPLICATED_KEY
+            raise KeyRefException("Duplicated key {} in SortedList {}".format(key, id(self)))
         # update info on the leaf node
         node.keys.insert(pos, key)
         return True
 
     def delete(self, key, node=None, pos=None, bias=None):
         if self.root.empty:
-            return EMPTY_TREE  # root is empty, cannot delete
+            raise TreeException("SortedList {} is empty".format(id(self)))  # root is empty, cannot delete
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
         if node.keys[pos] != key:
-            return CANNOT_FIND_KEY  # cannot find the key specified
+            raise KeyRefException("Cannot find key {} in SortedList {}".format(key, id(self)))
+            # cannot find the key specified
         del node.keys[pos]
         return True
 
 
 if __name__ == "__main__":
-    def insert_test(t):
-        t.insert(0, "Hello, world.")
-        t.insert(5, "Hello, again.")
-        t.insert(10, "Hello, hi.")
+    def insert_test_int(tree):
+        tree.insert(0, "Hello, world.")
+        tree.insert(5, "Hello, again.")
+        tree.insert(10, "Hello, hi.")
         # print(t)
-        t.insert(15, "Hello, bad.")
-        t.insert(20, "Hello, bad.")
-        t.insert(25, "Hello, bad.")
-        t.insert(11, "bad, damn")
-        t.insert(12, "gotta ya")
-        t.insert(13, "gotta ya")
-        t.insert(14, "gotta ya")
-        t.insert(28, "gotta ya")
-        t.insert(29, "gotta ya")
-        t.insert(29, "gotta ya")
-        t.insert(29, "gotta ya")
-        print(t)
+        tree.insert(15, "Hello, bad.")
+        tree.insert(20, "Hello, bad.")
+        tree.insert(25, "Hello, bad.")
+        tree.insert(11, "bad, damn")
+        tree.insert(12, "gotta ya")
+        tree.insert(13, "gotta ya")
+        tree.insert(14, "gotta ya")
+        tree.insert(28, "gotta ya")
+        try:
+            tree.insert(29, "gotta ya")
+            tree.insert(29, "gotta ya")
+            tree.insert(29, "gotta ya")
+        except KeyRefException as e:
+            print(e)
+        print(tree)
 
+    def insert_test_str(tree):
+        tree.insert("0", "Hello, world.")
+        tree.insert("5", "Hello, again.")
+        tree.insert("10", "Hello, hi.")
+        tree.insert("15", "Hello, bad.")
+        tree.insert("20", "Hello, bad.")
+        tree.insert("25", "Hello, bad.")
+        tree.insert("11", "bad, damn")
+        tree.insert("12", "gotta ya")
+        tree.insert("13", "gotta ya")
+        tree.insert("14", "gotta ya")
+        tree.insert("28", "gotta ya")
+        try:
+            tree.insert("29", "gotta ya")
+            tree.insert("29", "gotta ya")
+            tree.insert("29", "gotta ya")
+        except KeyRefException as e:
+            print(e)
+        print(tree)
 
-    for i in range(9, 2, -1):
-        print("Currently tesing tree with m={}".format(i))
-        t = Tree(i)
-        insert_test(t)
+    for m_value in range(9, 2, -1):
+        print("Currently tesing tree with m={}".format(m_value))
+        t = Tree(m_value)
+        insert_test_int(t)
     # don't try this, since when m = 2, some of the insertion splitting case is undefine
     # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
     # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
-    # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 sh`ould be deleted here!
+    # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 should be deleted here!
     # t = Tree(2)
     # insert_test(t)
+    t = Tree(3)
+    insert_test_int(t)
     t.delete(28)
     print(t)
     t.delete(29)
     print(t)
 
     t = Tree(5)
-    insert_test(t)
+    insert_test_int(t)
     t.delete(20)
     t.delete(25)
     t.delete(28)
@@ -440,20 +498,7 @@ if __name__ == "__main__":
     print(t)
 
     t = Tree(4)
-    t.insert("0", "Hello, world.")
-    t.insert("5", "Hello, again.")
-    t.insert("10", "Hello, hi.")
-    t.insert("15", "Hello, bad.")
-    t.insert("20", "Hello, bad.")
-    t.insert("25", "Hello, bad.")
-    t.insert("11", "bad, damn")
-    t.insert("12", "gotta ya")
-    t.insert("13", "gotta ya")
-    t.insert("14", "gotta ya")
-    t.insert("28", "gotta ya")
-    t.insert("29", "gotta ya")
-    t.insert("29", "gotta ya")
-    t.insert("29", "gotta ya")
+    insert_test_str(t)
 
     print(t)
 
