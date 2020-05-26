@@ -63,13 +63,10 @@ def insert(ind, key, value, is_replace=False):
     """
     # TODO: what if we cannot get what we want
     t = buffer.get_index(ind)
-    try:
-        t.delete(key)
-    except MiniSQLException as e:
-        if not isinstance(e, KeyException) and not isinstance(e, TreeException):
-            raise e
+
+    t.insert(key, value, is_replace)
     # TODO: what if we cannot insert? e.g. out of space
-    t.insert(key, value)
+
     buffer.save_index(t)
 
 

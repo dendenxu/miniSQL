@@ -5,7 +5,7 @@ to avoid introducing complexity and to program natively
 we don't import 3rd party package to this implementation of B+ tree
 
 However if we're to optimize for operations on large trunk of data
-we can import numpy as np as change data structures to np.array
+we can import numpy as np and change data structures to np.array
 
 Moreover there's implementation of BPlusTree in python already, if we're to be lazy
 we can simply pip install bplustree
@@ -243,11 +243,12 @@ class Tree:
         """
         return self.root.find(key, self.cmp)
 
-    def insert(self, key, value):
+    def insert(self, key, value, is_replace=False):
         """
         insert a key-value pair into the B+ tree
         might need splitting or fixing on siblings
 
+        :param is_replace: whether to replace on duplication
         :param key: the key to be inserted, used in find
         :param value: the value, usually a pointer or line number
         :return:
@@ -261,8 +262,12 @@ class Tree:
         # Trying finding the key
         node, pos, bias = self.find(key)
         if node.keys[pos] == key:
-            # Duplication and should not replace
-            raise KeyException("Duplicated key {} in tree {}".format(key, id(self)), (key, self))
+            if is_replace:
+                node.values[pos + bias] = value
+                return
+            else:
+                # Duplication and should not replace
+                raise KeyException("Duplicated key {} in tree {}".format(key, id(self)), (key, self))
         # print(node, pos, bias)
         pos += bias
         # update info on the leaf node
@@ -450,6 +455,7 @@ if __name__ == "__main__":
             print(e)
         print(tree)
 
+
     def insert_test_str(tree):
         tree.insert("0", "Hello, world.")
         tree.insert("5", "Hello, again.")
@@ -469,6 +475,7 @@ if __name__ == "__main__":
         except KeyException as e:
             print(e)
         print(tree)
+
 
     for m_value in range(9, 2, -1):
         print("Currently tesing tree with m={}".format(m_value))

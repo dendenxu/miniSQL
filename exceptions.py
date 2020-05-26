@@ -23,11 +23,11 @@ class KeyException(MiniSQLException):
         super().__init__(message, errors)
 
 
-class RangeException(Exception):
+class RangeException(MiniSQLException):
     def __init__(self, message, errors=None):
         super().__init__(message, errors)
 
 
-class TreeException(Exception):
+class TreeException(MiniSQLException):
     def __init__(self, message, errors=None):
         super().__init__(message, errors)
