@@ -4,7 +4,7 @@ try and catch stuff
 """
 
 
-class KeyRefException(Exception):
+class KeyException(Exception):
     def __init__(self, message, errors=None):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)

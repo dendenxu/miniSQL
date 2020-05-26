@@ -11,7 +11,7 @@ Moreover there's implementation of BPlusTree in python already, if we're to be l
 we can simply pip install bplustree
 and from bplustree import BPlusTree
 """
-from constants import *
+from exceptions import *
 
 
 def search(items, key, cmp=lambda x, y: x < y):
@@ -171,7 +171,6 @@ def _fix_on_sibling(m, node, is_left, is_deleting=False):
 
         del node.keys[node_pos]
         del node.values[node_pos]
-        key = node.keys[node_pos]
         _fix_parent(node if is_left else sibling)
         return True
     else:
@@ -189,7 +188,7 @@ class Tree:
     This feature enables us to implement tree like data structure in Python quite easily
     """
 
-    def __init__(self, m=4, cmp=lambda x, y: x < y, replace=False):
+    def __init__(self, m=4, cmp=lambda x, y: x < y, is_replace=False):
         self.m = m
         self.cmp = cmp
         self.root = Node(True, m=self.m)  # initially the root is also a leaf
@@ -220,7 +219,7 @@ class Tree:
     @property
     def min(self):
         if self.empty:
-            raise TreeException("Tree {} is empty".format(id(self)))
+            raise TreeException("Tree {} is empty".format(id(self)), self)
         node = self.root
         while not node.leaf:
             node = node.min[1]
@@ -229,7 +228,7 @@ class Tree:
     @property
     def max(self):
         if self.empty:
-            raise TreeException("Tree {} is empty".format(id(self)))
+            raise TreeException("Tree {} is empty".format(id(self)), self)
         node = self.root
         while not node.leaf:
             node = node.max[1]
@@ -244,14 +243,13 @@ class Tree:
         """
         return self.root.find(key, self.cmp)
 
-    def insert(self, key, value, is_replace=False):
+    def insert(self, key, value):
         """
         insert a key-value pair into the B+ tree
         might need splitting or fixing on siblings
 
         :param key: the key to be inserted, used in find
         :param value: the value, usually a pointer or line number
-        :param is_replace: are we using replace into command
         :return:
         """
         # A tree might be empty
@@ -262,9 +260,9 @@ class Tree:
 
         # Trying finding the key
         node, pos, bias = self.find(key)
-        if node.keys[pos] == key and not is_replace:
+        if node.keys[pos] == key:
             # Duplication and should not replace
-            raise KeyRefException("Duplicated key {} in tree {}".format(key, id(self)))
+            raise KeyException("Duplicated key {} in tree {}".format(key, id(self)), (key, self))
         # print(node, pos, bias)
         pos += bias
         # update info on the leaf node
@@ -286,13 +284,13 @@ class Tree:
         """
         # Whole tree might be empty
         if self.root.empty:
-            raise TreeException("Tree {} is empty".format(id(self)))  # root is empty, cannot delete
+            raise TreeException("Tree {} is empty".format(id(self)), self)  # root is empty, cannot delete
         # find the key if not already specified
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
         # is the key matched with the position
         if node.keys[pos] != key:
-            raise KeyRefException("Cannot find key {} in tree {}".format(key, id(self)))
+            raise KeyException("Cannot find key {} in tree {}".format(key, id(self)), (key, self))
             # cannot find the key specified
         del node.keys[pos]
         del node.values[pos]
@@ -413,18 +411,18 @@ class SortedList:
         node, pos, _ = self.find(key)
         if node.keys[pos] == key and not is_replace:
             # Duplication and should not replace
-            raise KeyRefException("Duplicated key {} in SortedList {}".format(key, id(self)))
+            raise KeyException("Duplicated key {} in SortedList {}".format(key, id(self)), (key, self))
         # update info on the leaf node
         node.keys.insert(pos, key)
         return True
 
     def delete(self, key, node=None, pos=None, bias=None):
         if self.root.empty:
-            raise TreeException("SortedList {} is empty".format(id(self)))  # root is empty, cannot delete
+            raise TreeException("SortedList {} is empty".format(id(self)), (self))  # root is empty, cannot delete
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
         if node.keys[pos] != key:
-            raise KeyRefException("Cannot find key {} in SortedList {}".format(key, id(self)))
+            raise KeyException("Cannot find key {} in SortedList {}".format(key, id(self)), (key, self))
             # cannot find the key specified
         del node.keys[pos]
         return True
@@ -448,7 +446,7 @@ if __name__ == "__main__":
             tree.insert(29, "gotta ya")
             tree.insert(29, "gotta ya")
             tree.insert(29, "gotta ya")
-        except KeyRefException as e:
+        except KeyException as e:
             print(e)
         print(tree)
 
@@ -468,7 +466,7 @@ if __name__ == "__main__":
             tree.insert("29", "gotta ya")
             tree.insert("29", "gotta ya")
             tree.insert("29", "gotta ya")
-        except KeyRefException as e:
+        except KeyException as e:
             print(e)
         print(tree)
 

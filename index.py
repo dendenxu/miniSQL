@@ -1,19 +1,17 @@
 import buffer
 from bplus import Tree, SortedList
-from constants import *
+from exceptions import *
 
 
 def _check_range(t, keys):
     if t.empty:
-        return EMPTY_TREE
+        raise TreeException("Tree {} is empty".format(id(t)), t)
     elif t.cmp(keys[-1], keys[0]):
-        return START_BIGGER_THAN_END
+        raise RangeException("Start {} is bigger than end {}".format(keys[0], keys[-1]), (keys, t))
     elif t.cmp(keys[-1], t.min[0]):
-        return MIN_BIGGER_THAN_END
+        raise RangeException("Min {} is bigger than end {}".format(t.min[0], keys[-1]), (keys, t))
     elif t.cmp(t.max[0], keys[0]):
-        return START_BIGGER_THAN_MAX
-    else:
-        return RANGE_IS_OK
+        raise RangeException("Start {} is bigger than end {}".format(keys[0], t.max[0]), (keys, t))
 
 
 def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
@@ -34,7 +32,7 @@ def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
         t.insert(data, index)  # insert data as key and line number as value
 
     # TODO: what happens if the disk is full and you cannot save the index on disk?
-    return buffer.save_index(t)
+    buffer.save_index(t)
 
 
 def drop_index(ind):
@@ -60,14 +58,14 @@ def insert(ind, key, value, is_replace=False):
     if node.keys[pos] == key:
         if not is_replace:
             # Duplication and should not replace
-            return DUPLICATED_KEY
+            raise KeyException("Duplicated key {} in tree {}".format(key, id(t)), (key, t))
         else:
             # TODO: what happens if the delete operation returns false
             # Although we cannot think of a situation for that
             t.delete(key, node, pos, bias)
     # TODO: what if we cannot insert? e.g. out of space
     t.insert(key, value)
-    return buffer.save_index(t)
+    buffer.save_index(t)
 
 
 def _operate_single(t, key, is_search):
@@ -83,9 +81,9 @@ def _operate_single(t, key, is_search):
             return node.values[pos]
         else:
             t.delete(None, node, pos, bias)
-            return buffer.save_index(t)
+            buffer.save_index(t)
     else:
-        return CANNOT_FIND_KEY
+        raise KeyException("Cannot find key {} in tree {}".format(key, id(t)), (key, t))
 
 
 def _operate_range(t, keys, is_search):
@@ -104,46 +102,43 @@ def _operate_range(t, keys, is_search):
     # start <= max
     # min <= end
     values = []
-    range_check_result = _check_range(t, keys)
-    if range_check_result != RANGE_IS_OK:
-        return range_check_result
+    _check_range(t, keys)
+    if node_a != node_z:
+        # handle node_a
+        for pos in range(pos_a, len(node_a.keys)):
+            if is_search:
+                values.append(node_a.values[pos])
+            else:
+                t.delete(None, node_a, pos, _)
+        # handle nodes between node_a and node_z (not including)
+        node = node_a
+        # if node_a is already node_z, don't do anything
+        while node != node_z:
+            # delete everything in between onw by one
+            for pos in range(0, len(node.keys)):
+                if is_search:
+                    values.append(node.values[pos])
+                else:
+                    t.delete(None, node, pos, 0)
+            # go to another node
+            node = node.right
+        # handle node_a
+        for pos in range(0, pos_z + 1):
+            if is_search:
+                values.append(node_z.values[pos])
+            else:
+                t.delete(None, node_z, pos, _)
     else:
-        if node_a != node_z:
-            # handle node_a
-            for pos in range(pos_a, len(node_a.keys)):
-                if is_search:
-                    values.append(node_a.values[pos])
-                else:
-                    t.delete(None, node_a, pos, _)
-            # handle nodes between node_a and node_z (not including)
-            node = node_a
-            # if node_a is already node_z, don't do anything
-            while node != node_z:
-                # delete everything in between onw by one
-                for pos in range(0, len(node.keys)):
-                    if is_search:
-                        values.append(node.values[pos])
-                    else:
-                        t.delete(None, node, pos, 0)
-                # go to another node
-                node = node.right
-            # handle node_a
-            for pos in range(0, pos_z + 1):
-                if is_search:
-                    values.append(node_z.values[pos])
-                else:
-                    t.delete(None, node_z, pos, _)
-        else:
-            # handle only this node if start and end is in the same node
-            for pos in range(pos_a, pos_z + 1):
-                if is_search:
-                    values.append(node_a.values[pos])
-                else:
-                    t.delete(None, node_a, pos, _)
+        # handle only this node if start and end is in the same node
+        for pos in range(pos_a, pos_z + 1):
+            if is_search:
+                values.append(node_a.values[pos])
+            else:
+                t.delete(None, node_a, pos, _)
     if is_search:
         return values
     else:
-        return buffer.save_index(t)
+        buffer.save_index(t)
 
 
 def _operate(ind, key, is_search):
