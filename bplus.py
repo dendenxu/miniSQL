@@ -23,6 +23,14 @@ def search(items, key, cmp=lambda x, y: x < y):
 
 
 def _check(m, n, is_root=False):
+    """
+    Check whether a node is full, needing splitting or merging
+
+    :param m:
+    :param n:
+    :param is_root:
+    :return:
+    """
     if not is_root:  # we treat leaf node as inner node
         # size of v should be ceil(m//2)-1 to m-1
         # size of k should be ceil(m//2) to m
@@ -36,6 +44,8 @@ def _check(m, n, is_root=False):
 
 def _find(node, key, cmp=lambda x, y: x < y):
     """
+    find an element by key beginning from node, defined as function to be called recursively
+
     :param Node node: the node to begin the find process with
     :param comparable object key: the key we're trying to find
     :param comparator function cmp: the comparator function, takes two args and return True if arg1 < arg2
@@ -61,12 +71,30 @@ class Node:
         self.values = []
 
     def check(self, is_root=False):
+        """
+        Check whether the node itself is full, calls _check
+
+        :param is_root:
+        :return:
+        """
         return _check(self.m, len(self.keys), is_root)
 
     def find(self, key, cmp=lambda x, y: x < y):
+        """
+        Find lower bound of an element, beginning from this node, calls _find
+
+        :param key:
+        :param cmp:
+        :return:
+        """
         return _find(self, key, cmp)
 
     def __str__(self):  # debugging string
+        """
+        Convert the Node to string for output (used in debugging)
+
+        :return: the converted string
+        """
         to_string = ""
         for i in range(self.m - 1):
             to_string += ":{}".format(' ' if i >= len(self.keys) else self.keys[i])
@@ -87,6 +115,13 @@ class Node:
 
 
 def _fix_parent(node):
+    """
+    Get the right position to update and update the parent of a node
+    when node's position in parent is -1, go up, else update and abort
+
+    :param node: the node whose parent needs updating
+    :return:
+    """
     key = node.keys[0]
     while node.parent is not None and node.pos == -1:
         node = node.parent
@@ -96,6 +131,16 @@ def _fix_parent(node):
 
 
 def _fix_on_sibling(m, node, is_left, is_deleting=False):
+    """
+    The node is over/under full, borrowing/sending key-value parts to a valid sibling
+    if no sibling is valid, return False so that caller can split or merge node(s)
+
+    :param m:
+    :param node:
+    :param is_left:
+    :param is_deleting:
+    :return:
+    """
     sibling = node.left if is_left else node.right
     is_left = not is_left if is_deleting else is_left
     temp = node
@@ -127,11 +172,16 @@ class Tree:
         self.root = Node(True, m=self.m)  # initially the root is also a leaf
 
     def __str__(self):  # debugging string
+        """
+        Convert the Node to string for output (used in debugging)
+        :return: the converted string
+        """
         to_string = "|"
         deque = [self.root, "\n"]
+        # Level order traversal of a B+ tree
         while len(deque) > 1:
             node = deque[0]
-            to_string += str(node) + "|"
+            to_string += str(node) + "|"  # calls __str__ of a node
             del deque[0]
             if type(node) == Node:
                 for child in node.values:
@@ -150,7 +200,7 @@ class Tree:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
-            node = node.min[1]
+            node = node.min[2]
         return node.min
 
     @property
@@ -159,17 +209,35 @@ class Tree:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
-            node = node.max[1]
+            node = node.max[2]
         return node.max
 
     def find(self, key):
+        """
+        calls find on root node
+
+        :param key: the key we're trying to find
+        :return:
+        """
         return self.root.find(key, self.cmp)
 
     def insert(self, key, value, is_replace=False):
+        """
+        insert a key-value pair into the B+ tree
+        might need splitting or fixing on siblings
+
+        :param key: the key to be inserted, used in find
+        :param value: the value, usually a pointer or line number
+        :param is_replace: are we using replace into command
+        :return:
+        """
+        # A tree might be empty
         if self.root.empty:
             self.root.keys = [key, ]
             self.root.values = [value, ]
             return True
+
+        # Trying finding the key
         node, pos, bias = self.find(key)
         if node.keys[pos] == key and not is_replace:
             # Duplication and should not replace
@@ -183,10 +251,23 @@ class Tree:
         return True
 
     def delete(self, key, node=None, pos=None, bias=None):
+        """
+        Delete a key value pair
+        can specify the position by hand or let the deleter find it for you
+
+        :param key: the key to delete
+        :param node: the position to delete, None by default
+        :param pos: the position to delete, None by default
+        :param bias: the position to delete, None by default
+        :return:
+        """
+        # Whole tree might be empty
         if self.root.empty:
             return EMPTY_TREE  # root is empty, cannot delete
+        # find the key if not already specified
         if node is None or pos is None or bias is None:
             node, pos, bias = self.find(key)
+        # is the key matched with the position
         if node.keys[pos] != key:
             return CANNOT_FIND_KEY  # cannot find the key specified
         del node.keys[pos]
@@ -324,10 +405,11 @@ if __name__ == "__main__":
 
 
     for i in range(9, 2, -1):
+        print("Currently tesing tree with m={}".format(i))
         t = Tree(i)
         insert_test(t)
-    t = Tree(2)
-    insert_test(t)
+    # t = Tree(2)
+    # insert_test(t)
     t.delete(28)
     print(t)
     t.delete(29)

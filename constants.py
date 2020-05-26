@@ -1,3 +1,7 @@
+"""
+Considering changing constant return value to exception
+try and catch stuff
+"""
 DUPLICATED_KEY = -1
 CANNOT_FIND_KEY = -2
 START_BIGGER_THAN_END = -3
