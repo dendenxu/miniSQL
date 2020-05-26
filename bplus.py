@@ -200,7 +200,7 @@ class Tree:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
-            node = node.min[2]
+            node = node.min[1]
         return node.min
 
     @property
@@ -209,7 +209,7 @@ class Tree:
             return EMPTY_TREE
         node = self.root
         while not node.leaf:
-            node = node.max[2]
+            node = node.max[1]
         return node.max
 
     def find(self, key):
@@ -283,70 +283,71 @@ class Tree:
             # check the node itself at first
             # print(self)
             flow_status = node.check(id(self.root) == id(node))
-            if flow_status:
+            if not flow_status:
+                break
                 # node is too big, might needs splitting
                 # try left
-                if not node.leaf or not _fix_on_sibling(self.m, node, True, flow_status == -1):
-                    # try right sibling
-                    if not node.leaf or not _fix_on_sibling(self.m, node, False, flow_status == -1):
-                        if flow_status == 1:  # overfull, should split
-                            # no sibling is ok
-                            # TODO: peculate up, splitting
-                            # is root
-                            if id(self.root) == id(node):
-                                self.root = Node(False, m=self.m)
-                                self.root.keys = []
-                                self.root.values = [node, ]
-                                node.parent = self.root
-                                node.pos = -1
-                            new = Node(node.leaf, node.parent, node.pos + 1, node, node.right, m=self.m)
-                            if new.right is not None:  # update if new.right exists
-                                new.right.left = new
-                                right = new.right
-                                while right is not None:  # update all right siblings since the insertion
-                                    right.pos += 1
-                                    right = right.right
-                            node.right = new
-                            # Copy keys
-                            new.keys = node.keys[self.m // 2::]
-                            node.keys = node.keys[0:self.m // 2]
-                            # Copy values along with keys, might be pointers
-                            new.values = node.values[self.m // 2 + (0 if node.leaf else 1)::]
-                            node.values = node.values[0:self.m // 2 + (0 if node.leaf else 1)]
-                            # Update the parent
-                            new.parent.keys.insert(new.pos, new.keys[0])
-                            new.parent.values.insert(new.pos + 1, new)
+            if node.leaf and _fix_on_sibling(self.m, node, True, flow_status == -1):
+                # try right sibling
+                break
+            if node.leaf and _fix_on_sibling(self.m, node, False, flow_status == -1):
+                break
+            if flow_status == 1:  # overfull, should split
+                # no sibling is ok
+                # TODO: peculate up, splitting
+                # is root
+                if id(self.root) == id(node):
+                    self.root = Node(False, m=self.m)
+                    self.root.keys = []
+                    self.root.values = [node, ]
+                    node.parent = self.root
+                    node.pos = -1
+                new = Node(node.leaf, node.parent, node.pos + 1, node, node.right, m=self.m)
+                if new.right is not None:  # update if new.right exists
+                    new.right.left = new
+                    right = new.right
+                    while right is not None:  # update all right siblings since the insertion
+                        right.pos += 1
+                        right = right.right
+                node.right = new
+                # Copy keys
+                new.keys = node.keys[self.m // 2::]
+                node.keys = node.keys[0:self.m // 2]
+                # Copy values along with keys, might be pointers
+                new.values = node.values[self.m // 2 + (0 if node.leaf else 1)::]
+                node.values = node.values[0:self.m // 2 + (0 if node.leaf else 1)]
+                # Update the parent
+                new.parent.keys.insert(new.pos, new.keys[0])
+                new.parent.values.insert(new.pos + 1, new)
 
-                            # Prepare for the next loop
-                            key = new.keys[0]
-                            # inner node should not contain the extra node
-                            if not node.leaf:
-                                del new.keys[0]
-                            # update children's parent if is not leaf node
-                            if not new.leaf:
-                                for index, child in enumerate(new.values):
-                                    child.parent = new
-                                    child.pos = index - 1
-                            node = new.parent
-                            continue
-                        else:  # under-flow, should pack up
-                            # we've already checked left and right, no extra node too share, safe to pack
-                            if node.right is None:
-                                node = node.left
-                            node.keys += node.right.keys
-                            node.values += node.right.values
-                            del node.parent.keys[node.pos + 1]
-                            del node.parent.values[node.pos + 2]
-                            temp = node.right
-                            node.right = temp.right
-                            del temp
-                            node = node.parent
-                            if id(node) == id(self.root) and len(node.keys) == 0:
-                                self.root = node.values[0]
-                                del node
-                            continue
-            # break if we're not in the most inner if-else block
-            break
+                # Prepare for the next loop
+                key = new.keys[0]
+                # inner node should not contain the extra node
+                if not node.leaf:
+                    del new.keys[0]
+                # update children's parent if is not leaf node
+                if not new.leaf:
+                    for index, child in enumerate(new.values):
+                        child.parent = new
+                        child.pos = index - 1
+                node = new.parent
+                continue
+            else:  # under-flow, should pack up
+                # we've already checked left and right, no extra node too share, safe to pack
+                if node.right is None:
+                    node = node.left
+                node.keys += node.right.keys
+                node.values += node.right.values
+                del node.parent.keys[node.pos + 1]
+                del node.parent.values[node.pos + 2]
+                temp = node.right
+                node.right = temp.right
+                del temp
+                node = node.parent
+                if id(node) == id(self.root) and len(node.keys) == 0:
+                    self.root = node.values[0]
+                    del node
+                continue
 
 
 class PositionList:
@@ -410,7 +411,7 @@ if __name__ == "__main__":
         print("Currently tesing tree with m={}".format(i))
         t = Tree(i)
         insert_test(t)
-    # don't try this, since when m = 2, some of the insertion splitting case is undifine
+    # don't try this, since when m = 2, some of the insertion splitting case is undefine
     # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
     # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
     # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 sh`ould be deleted here!
