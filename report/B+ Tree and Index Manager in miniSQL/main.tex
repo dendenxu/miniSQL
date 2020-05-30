@@ -306,11 +306,14 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{树操作具体实现}
-\subsubsection{查询操作具体实现}
-详见节点查询部分。
-\subsubsection{插入操作具体实现}
-
+\subsection{辅助函数具体实现}
+为了方便调用/实现B+树相关功能，并提供代码的抽象程度和复用率，我们使用了一些普适性的函数。例如算法\ref{alg:fix_parent}所示的操作会在节点的头元素修改后修改父节点的相关头元素，如图\ref{fig:fix_parent}所示。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{fix_parent.eps}
+    \caption{\texttt{FixParent}}
+    \label{fig:fix_parent}
+\end{figure}
 \begin{algorithm}[H]
     \caption{Fix a Node's Parent After the Left Most Value Is Updated}
     \label{alg:fix_parent}
@@ -318,7 +321,7 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
         \Require The $node$ whose parent is to be fixed
         \Function{FixParent}{$node$}
             \State $key \leftarrow node.keys.front$
-            \While{$\Call{Exist}{node.parent} \cap node.position= -1$} \Comment{-1 (postion in parent) indicates the node to be the first of parent's children}
+            \While{$\Call{Exist}{node.parent} \cap node.position= -1$} \Comment{-1 (position in parent) indicates the node to be the first of parent's children}
                 \State $node \leftarrow node.parent$
             \EndWhile
             \If{$\Call{Exist}{node.parent}$}
@@ -327,6 +330,17 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
         \EndFunction
     \end{algorithmic}
 \end{algorithm}
+
+B+树中节点出现异常\footnote{过饱和，欠饱和等。}后，我们可以直接通过合并节点或拆分节点进行修复操作，也可以首先检查问题节点的姊妹节点是否有修复余地\footnote{有些B+树不会实现这一功能，以降低开发难度。}。本实验中我们采用了首先检查姊妹节点的方式。我们会在进行分裂或合并操作前，检查姊妹是否能否容纳过饱和的冗余或是否有足够多元素为当前问题节点作出补充。
+若仍有空余/节点数目足够，则进行修复操作\footnote{对于插入造成的过饱和，删除造成的欠饱和，我们仅仅需要实现一份代码，将问题节点和姊妹节点互换即可复用这一份代码}。此函数的伪代码如算法\ref{alg:fix_sibling}所示，图\ref{fig:fix_sibling}演示了这一过程。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{fix_sibling.eps}
+    \caption{\texttt{FixSibling}}
+    \label{fig:fix_sibling}
+\end{figure}
+
 
 \begin{algorithm}[H]
     \caption{Fix a Node by Borrowing From a Sibling}
@@ -348,6 +362,7 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
     \end{algorithmic}
 \end{algorithm}
 
+算法\ref{alg:fix_tree}列举了修改在插入或删除操作后出现问题节点的B+树的完整过程\footnote{包含分裂节点与合并节点的具体内容}。
 
 \begin{breakablealgorithm}
     \caption{Fix a B+ Tree After Insertion/Deletion}
@@ -418,6 +433,15 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
 \end{breakablealgorithm}
 
 
+\subsection{查询操作具体实现}
+详见节点查询部分。
+\subsection{插入操作具体实现}
+\subsection{删除操作具体实现}
+
+
+
+
+
 \begin{algorithm}[H]
     \caption{Insertion in B+ Tree}
     \label{alg:insert_tree}
@@ -441,6 +465,30 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
     \end{algorithmic}
 \end{algorithm}
 
+
+\begin{algorithm}[H]
+    \caption{Deletion in B+ Tree}
+    \label{alg:delete_tree}
+    \begin{algorithmic}
+        \Require The $tree$ whose key-value pair is to be deleted, and the $key$ to be deleted
+        \Function{Delete}{$tree$, $key$}
+            \If{$\Call{Empty}{tree}$}
+                \State \textbf{raise} $\Call{TreeException}{Empty\ tree}$
+            \EndIf
+            \State $\Call{Group}{node, position, bias} \leftarrow \Call{Find}{tree, key}$
+            \If{$node.keys[position] \neq key$}
+                \State \textbf{raise} $\Call{KeyException}{Cannot\ find\ key}$
+            \EndIf
+            \State $\Call{Delete}{node.keys[position]}$
+            \State $\Call{Delete}{node.children[position]}$ \Comment{On leaf values and keys have the same indices}
+            \State $flow \leftarrow \Call{Check}{node}$
+            \If{$flow \neq 0$}
+                \State $\Call{FixParent}{node}$
+            \EndIf
+            \State $\Call{FixTree}{tree, node}$
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
 
 \chapter{遇到的问题及解决方法}
 \chapter{总结}
