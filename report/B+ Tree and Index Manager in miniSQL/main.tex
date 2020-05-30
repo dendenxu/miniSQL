@@ -57,6 +57,31 @@
     linenos,
     fontsize=\small
 }
+
+
+\makeatletter
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}% New algorithm
+     \hrule height.8pt depth0pt \kern2pt% \@fs@pre for \@fs@ruled
+     \renewcommand{\caption}[2][\relax]{% Make a new \caption
+       {\raggedright\textbf{\ALG@name~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax % #1 is \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else % #1 is not \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{% \end{breakablealgorithm}
+     \kern2pt\hrule\relax% \@fs@post for \@fs@ruled
+   \end{center}
+  }
+\makeatother
+
+
+
 %-----------------------------------------------------------------------------------------
 % To predefine title and stuff
 %-----------------------------------------------------------------------------------------
@@ -229,7 +254,201 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 这样能保证尽量大的抽象层次与代码复用率。值得注意的是，我们在实现B+树相关操作的时候也使用了静态函数来抽象部分内容\footnote{我们将在下一部分详细阐述实现细节}。
 
 \chapter{模块实现}
+\section{B+树模块具体实现}
+\subsection{节点操作具体实现}
+节点是B+树中的数据储存元素，每个节点根据要求存储一定数量的排序数据。我们需实首先应实现节点相关操作。算法\ref{alg:binary_searching}实现了一种$O(log\ n)$级别的二分下届查找，用于在某个节点中寻找关键元素。在实际实现中，我们会在C++项目中采用模板，但Python语言的动态类型特性使得这类普适算法很容易应用到具体的数据类型上。
+\begin{algorithm}[H]
+    \caption{General Binary Search}
+    \label{alg:binary_searching}
+    \begin{algorithmic}[1]
+        \Require The $items$ in iterable list and the $key$ to be searched, optionally the $comparitor$
+        \Ensure The $lower_bound$ of the $key$ in $items$, as index
+        \Function {BinarySearch}{$items$, $key$, $comparitor=lambda$}
+            \State $left \leftarrow 0$
+            \State $right \leftarrow \Call{Length}{items}$
+            \While{$True$}
+                \State $mid \leftarrow (left + right) / 2$
+                \If{$left >= right - 1$}
+                    \State \textbf{Break}
+                \EndIf
+                \If{$key < items[mid]$} \Comment{Use custom $comparitor$ if present}
+                    \State $right \leftarrow mid$
+                \Else
+                    \State $left \leftarrow mid$
+                \EndIf
+            \EndWhile
+            \State \Return $mid$
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
 
+B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们正在\textit{节点}模块介绍这一算法，但实际使用中我们往往会通过一颗B+树的根来调用此算法\footnote{本算法会从当前节点开始，一直查询到叶节点。}\footnote{要查找某棵树上的元素，我们只需要从根节点调用此方法。}。
+
+\begin{algorithm}[H]
+    \caption{Find Operation on Node}
+    \label{alg:find_on_node}
+    \begin{algorithmic}[1]
+        \Require Current $node$ and the $key$ to be found, optionally the customer $comparitor$
+        \Ensure The leaf $node$ and the $position$ of the found element, plus a bias to indicate whether the key is smaller than the smallest element
+        \Function{Find}{$node$, $key$, $comparitor=lambda$}
+            \State $position \leftarrow \Call{BinarySearch}{node.items, key, comparitor}$
+            \If{$position = 0 \cap key < node.keys[0]$}
+                \State $bias \leftarrow 0$
+            \Else
+                \State $bias \leftarrow 1$
+            \EndIf
+            \If{$\Call{IsLeaf}{node}$}
+                \State \Return $\Call{Group}{node, position, bias}$
+            \Else
+                \State \Return $\Call{Find}{node.children[position + bias], key, comparitor}$
+            \EndIf
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{树操作具体实现}
+\subsubsection{查询操作具体实现}
+详见节点查询部分。
+\subsubsection{插入操作具体实现}
+
+\begin{algorithm}[H]
+    \caption{Fix a Node's Parent After the Left Most Value Is Updated}
+    \label{alg:fix_parent}
+    \begin{algorithmic}[1]
+        \Require The $node$ whose parent is to be fixed
+        \Function{FixParent}{$node$}
+            \State $key \leftarrow node.keys.front$
+            \While{$\Call{Exist}{node.parent} \cap node.position= -1$} \Comment{-1 (postion in parent) indicates the node to be the first of parent's children}
+                \State $node \leftarrow node.parent$
+            \EndWhile
+            \If{$\Call{Exist}{node.parent}$}
+                \State $node.parent.keys[node.position] \leftarrow key$
+            \EndIf
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Fix a Node by Borrowing From a Sibling}
+    \label{alg:fix_sibling}
+    \begin{algorithmic}[1]
+        \Require The $node$ to be fixed
+        \Ensure $True$ if fixed, and $False$ if otherwise
+        \Function{FixSibling}{$node$}
+            \State $sibling \leftarrow node.sibling$ \Comment{next lines will go through both left and right sibling, we'll illustrate the procedure when sibling is left}
+            \If{$\Call{Exist}{sibling} \cap \Call{Check}{node}$} \Comment{Check whether node overflows or underflows}
+                \State $\Call{MoveValue}{node.keys.front, sibling.keys.back}$ \Comment{Move front of node's keys to end of sibling's keys}
+                \State $\Call{MoveValue}{node.values.front, sibling.values.back}$
+                \State $\Call{FixParent}{node}$
+                \State \Return \textbf{True}
+            \Else
+                \State \Return \textbf{False}
+            \EndIf
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}[H]
+    \caption{Fix a B+ Tree After Insertion/Deletion Part 1}
+    \label{alg:fix_tree_part1}
+    \begin{algorithmic}[1]
+        \Require The $tree$ to be fixed, and the $node$ we've inserted new value on
+        \Function{FixTree}{$tree$, $node$}
+            \While{True}
+                \State $flow \leftarrow \Call{Check}{node}$ \Comment{1 for overflow and -1 for underflow, 0 if node is ok}
+                \If{$flow = 0$}
+                    \State \textbf{Break}
+                \EndIf
+                \If{$\Call{FixSibling}{node}$}
+                    \State \textbf{Break}
+                \EndIf
+                \If{$flow = 1$} \Comment{overflow, should split up}
+                    \If{$node=tree.root$}
+                        \State $tree.root \leftarrow \Call{NewNode}{}$
+                        \State $\Call{Append}{tree.children, node}$
+                        \State $node.parent \leftarrow tree.root$
+                    \EndIf
+                    \State $new \leftarrow \Call{NewNode}{}$
+                    \If{$\Call{Exist}{new.right}$}
+                        \State $new.right.left \leftarrow new$
+                        \State $right \leftarrow new.right$
+                        \While{$\Call{Exist}{right}$}
+                            \State $\Call{Increment}{right.position}$
+                            \State $right \leftarrow right.right$
+                        \EndWhile
+                    \EndIf
+                    \State $node.right \leftarrow new$
+                    \State $new.keys \leftarrow \Call{LeftHalf}{node.keys}$
+                    \State $node.keys \leftarrow \Call{RightHalf}{node.keys}$
+                    \State $new.values \leftarrow \Call{LeftHalf}{node.values}$
+                    \State $node.values \leftarrow \Call{RightHalf}{node.values}$
+                    \State $\Call{Insert}{new.parent.keys, new.position, new.keys.front}$
+                    \State $\Call{Insert}{new.parent.children, new.position + 1, new}$
+                    \algstore{bk:break_fix_tree}
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Fix a B+ Tree After Insertion/Deletion Part 2}
+    \label{alg:fix_tree_part2}
+    \begin{algorithmic}[1]
+        \Require The $tree$ to be fixed, and the $node$ we've inserted new value on
+        \algrestore{bk:break_fix_tree}
+                    \If{$\neg \Call{IsLeaf}{node}$}
+                        \State $\Call{Delete}{new.keys.front}$ \Comment{Delete is to delete given element from its container like a Python list}
+                    \EndIf
+                    \If{$\neg \Call{IsLeaf}{new}$}
+                        \For{$child \leftarrow new.children.front$}{$new.children.back$}
+                            \State $child.parent \leftarrow new$
+                            \State $child.posion \leftarrow index$
+                        \EndFor
+                    \EndIf
+                    \State $node \leftarrow new.parent$ \Comment{Prepare for the next loop, peculate up one level}
+                \Else \Comment{underflow, should merge}
+                    \If{$\Call{Exist}{node.right}$} \Comment{By default we'd merge current node and its right sibling}
+                        \State $node \leftarrow node.left$
+                    \EndIf
+                    \State $node.keys \leftarrow \Call{Concatenate}{node.keys, node.right.keys}$
+                    \State $node.children \leftarrow \Call{Concatenate}{node.children, node.right.children}$
+                    \State $\Call{Delete}{node.parent.keys, node.position + 1}$
+                    \State $\Call{Delete}{node.parent.children, node.position + 2}$
+                    \State $temp \leftarrow node.right$
+                    \State $node.right \leftarrow temp.right$
+                    \State $\Call{Delete}{temp}$
+                    \State $node \leftarrow node.parent$ \Comment{Peculate up one level, prepare for next loop}
+                    \If{$node = tree.root$}
+                        \State $tree.root = node.children.front$
+                        \State $\Call{Delete}{node}$
+                    \EndIf
+                \EndIf
+            \EndWhile
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Insertion in B+ Tree}
+    \label{alg:insert_tree}
+    \begin{algorithmic}[1]
+        \Require The $tree$ object to be inserted into, and the $key$-$value$ pair to be inserted
+        \Function{Insert}{$tree$, $key$, $value$}
+            \If{$\Call{IsEmpty}{tree}$}
+                \State $\Call{Append}{tree.keys, key}$
+                \State $\Call{Append}{tree.values, value}$
+                \State \Return
+            \EndIf
+            \State $\Call{Group}{node, position, bias} \leftarrow \Call{Find}{tree.root, key, tree.comparitor}$
+            \If{$node.keys[pos] = key$}
+                \State \textbf{Raise} $\Call{KeyException}{duplicated\ key}$
+            \EndIf
+            \State $\Call{Insert}{node.keys, position+bias, key}$
+            \State $\Call{Insert}{node.values, position+bias, value}$
+            \State $\Call{Fix}{node}$
+            \State \Return
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
 
 
 \chapter{遇到的问题及解决方法}
