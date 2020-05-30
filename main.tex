@@ -161,7 +161,7 @@
 正如图\ref{fig:index_example}所示的\footnote{图\ref{fig:index_example}来源于\textit{Database System Concepts 6th Edition Abraham Silberschatz等。}}。为了方便演示，让我们用其中的第一列作为建立索引的数据集。我们会按顺序将提供的数据插入索引数据结构，因此在这一个键值对中，键为第一列数据值，如\textit{10101}，而值为行号，如\textit{0}。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\linewidth]{index_example.eps}
+    \includegraphics[width=0.7\linewidth]{figure/index_example.eps}
     \caption{线性记录储存方式}
     \label{fig:index_example}
 \end{figure}
@@ -179,7 +179,7 @@
 我们调用B+树相应查找接口获得应查找的值，并通过异常来进行错误通讯。若查找成功则直接返回，否则抛出相关异常。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{search_delete_single.eps}
+    \includegraphics[width=0.75\linewidth]{figure/search_delete_single.eps}
     \caption{单值操作}
     \label{fig:search_delete_single}
 \end{figure}
@@ -190,7 +190,7 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{search_delete_multi.eps}
+    \includegraphics[width=0.75\linewidth]{figure/search_delete_multi.eps}
     \caption{范围操作}
     \label{fig:search_delete_multi}
 \end{figure}
@@ -241,7 +241,7 @@ B+ 树的创造者 Rudolf Bayer 没有解释B代表什么。最常见的观点�
 B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完整性，我们也列举了除用户自定义类型以外的类型。}\footnote{我们使用矢量图渲染了字体，若图表过小请放大查看。}。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{bplus.eps}
+    \includegraphics[width=0.85\linewidth]{figure/bplus.eps}
     \caption{B+树的类图与类间关系}
     \label{fig:bplus_diagram}
 \end{figure}
@@ -249,7 +249,7 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 程序使用的异常类图如\ref{fig:exceptions_diagram}所示。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\linewidth]{exceptions.eps}
+    \includegraphics[width=0.5\linewidth]{figure/exceptions.eps}
     \caption{异常的类图与类间关系}
     \label{fig:exceptions_diagram}
 \end{figure}
@@ -314,7 +314,7 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
 为了方便调用/实现B+树相关功能，并提供代码的抽象程度和复用率，我们使用了一些普适性的函数。例如算法\ref{alg:fix_parent}所示的操作会在节点的头元素修改后修改父节点的相关头元素，如图\ref{fig:fix_parent}所示。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{fix_parent.eps}
+    \includegraphics[width=0.8\linewidth]{figure/fix_parent.eps}
     \caption{\texttt{FixParent}}
     \label{fig:fix_parent}
 \end{figure}
@@ -340,7 +340,7 @@ B+树中节点出现异常\footnote{过饱和，欠饱和等。}后，我们可�
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{fix_sibling.eps}
+    \includegraphics[width=0.8\linewidth]{figure/fix_sibling.eps}
     \caption{\texttt{FixSibling}}
     \label{fig:fix_sibling}
 \end{figure}
