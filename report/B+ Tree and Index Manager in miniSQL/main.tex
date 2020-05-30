@@ -349,9 +349,9 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
 \end{algorithm}
 
 
-\begin{algorithm}[H]
-    \caption{Fix a B+ Tree After Insertion/Deletion Part 1}
-    \label{alg:fix_tree_part1}
+\begin{breakablealgorithm}
+    \caption{Fix a B+ Tree After Insertion/Deletion}
+    \label{alg:fix_tree}
     \begin{algorithmic}[1]
         \Require The $tree$ to be fixed, and the $node$ we've inserted new value on
         \Function{FixTree}{$tree$, $node$}
@@ -385,16 +385,6 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
                     \State $node.values \leftarrow \Call{RightHalf}{node.values}$
                     \State $\Call{Insert}{new.parent.keys, new.position, new.keys.front}$
                     \State $\Call{Insert}{new.parent.children, new.position + 1, new}$
-                    \algstore{bk:break_fix_tree}
-    \end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}[H]
-    \caption{Fix a B+ Tree After Insertion/Deletion Part 2}
-    \label{alg:fix_tree_part2}
-    \begin{algorithmic}[1]
-        \Require The $tree$ to be fixed, and the $node$ we've inserted new value on
-        \algrestore{bk:break_fix_tree}
                     \If{$\neg \Call{IsLeaf}{node}$}
                         \State $\Call{Delete}{new.keys.front}$ \Comment{Delete is to delete given element from its container like a Python list}
                     \EndIf
@@ -425,7 +415,8 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
             \EndWhile
         \EndFunction
     \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
+
 
 \begin{algorithm}[H]
     \caption{Insertion in B+ Tree}
