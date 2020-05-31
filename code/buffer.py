@@ -1,5 +1,6 @@
-def save_index(tree):
+def save_index(tree, ind=None):
     """
+    :param ind: If specified, should replace with current index by ind
     :param tree: the tree to be saved to disk or memory buffer
     :return: the index of the saved tree/index
     """

@@ -67,7 +67,7 @@ def insert(ind, key, value, is_replace=False):
     t.insert(key, value, is_replace)
     # TODO: what if we cannot insert? e.g. out of space
 
-    buffer.save_index(t)
+    buffer.save_index(t, ind)
 
 
 def _operate_single(t, key, is_search):
