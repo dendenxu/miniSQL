@@ -1,6 +1,11 @@
 # miniSQL
 
+## Update
+
+- Added a partial report for B+ Tree and Index Manager
+
 ## File Specification
+[] TODO: update this secion
 - `bplus.py` implements B+ tree and Sorted Array for index
 - `index.py` implements index operations as Index Manager
 - `buffer.py` contains API that the Index Manager requires Buffer Manager to have

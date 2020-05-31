@@ -49,7 +49,7 @@
 % To list code elegantly and stuff
 %-----------------------------------------------------------------------------------------
 \usepackage[
-    cache=false,
+    % cache=false,
     newfloat=true,
     % outputdir=./
 ]{minted} % needed for listing
@@ -84,6 +84,8 @@
   }
 \makeatother
 
+% \algrenewtext{For}[3]%
+% {\algorithmicfor\ #1 \gets #2 \algorithmicto\ #3 \algorithmicdo}
 
 
 %-----------------------------------------------------------------------------------------
@@ -258,6 +260,14 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 这样能保证尽量大的抽象层次与代码复用率。值得注意的是，我们在实现B+树相关操作的时候也使用了静态函数来抽象部分内容\footnote{我们将在下一部分详细阐述实现细节}。
 
 \chapter{模块实现}
+我们通过\texttt{Python}语言来实现各个模块和类。下面我们会通过
+\begin{itemize}
+    \item 伪代码。
+    \item 图表。
+    \item 简短的源码。
+\end{itemize}
+等方式来阐述各个模块的具体实现。
+
 \section{B+树模块具体实现}
 \subsection{节点操作具体实现}
 节点是B+树中的数据储存元素，每个节点根据要求存储一定数量的排序数据。我们需实首先应实现节点相关操作。算法\ref{alg:binary_searching}实现了一种$O(log\ n)$级别的二分下届查找，用于在某个节点中寻找关键元素。在实际实现中，我们会在C++项目中采用模板，但Python语言的动态类型特性使得这类普适算法很容易应用到具体的数据类型上。
@@ -529,6 +539,63 @@ class TreeException(MiniSQLException):
 \caption{异常类型的具体实现}
 \label{lst:exception}
 \end{longlisting}
+
+\section{备用数据结构具体实现}
+为了满足特殊操作\footnote{如，要求插入的键值对中\textbf{值}永远是当前的下标。}我们实现了一种特殊的数据结构：\textit{排序数组索引结构}，其具备了如下特点：
+\begin{itemize}
+    \item 查询操作时间同样为$O(log\ N)$。
+    \item 进行各项其他操作表现如同数组，没有冗杂的数据结构与算法支撑。
+    \item 提供与B+树完全相同的接口。
+\end{itemize}
+其具体实现和算法\ref{alg:binary_searching}，\ref{alg:find_on_node}以及\ref{alg:insert_tree}描述的很相似，只不过去除了复杂的修复部分。我们通过图\ref{fig:sorted_list}来进一步描述这一过程\footnote{若插图过小请放大，我们使用了矢量图。}。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{figure/sorted_list.eps}
+    \caption{排序数组具体实现}
+    \label{fig:sorted_list}
+\end{figure}
+
+
+\section{索引管理器模块具体实现}
+我们根据索引管理器系统的要求实现了逻辑管理器模块，并进行了一定程度上的逻辑抽象和代码复用。
+
+\subsection{整体索引操作}
+对完整索引进行的操作如算法\ref{alg:index_creation_deletion}所示。
+
+\algnewcommand\algorithmicraise{\textbf{raise}}
+\algnewcommand\Raise{\item[\algorithmicraise]}
+
+\begin{algorithm}
+    \caption{索引的插入删除}
+    \label{alg:index_creation_deletion}
+    \begin{algorithmic}
+        \Function{CreateIndex}{$data\_list$, $comparitor$}
+            \State $tree \leftarrow \Call{NewTree}{comparitor}$
+            \ForAll{$data \in data\_list$}
+                \State $\Call{InsertTree}{tree, data[i]}$
+            \EndFor
+            \State $\Call{SaveBufferIndex}{tree}$
+        \EndFunction
+        \Function{DropIndex}{$id$}
+            \State $\Call{DropBufferIndex}{id}$
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{元素寻找，插入，删除具体实现}
+
+\begin{algorithm}
+    \caption{元素的插入，删除和删除}
+    \begin{algorithmic}
+        \Function{InsertElement}{$id$, $key$, $value$}
+            \State $tree \leftarrow \Call{GetBufferIndex}{id}$
+            \State $\Call{InsertTree}{tree, key, value}$
+            \State $\Call{SaveBufferIndex}{tree, ind}$ \Comment{Specify the id, so that buffer manager can replace}
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
 
 \chapter{遇到的问题及解决方法}
 \chapter{总结}
