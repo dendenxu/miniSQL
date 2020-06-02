@@ -46,7 +46,7 @@ def search_record(fname, conditionList):    # 内部接口
     origdf = file_manager.get_data(fname)
     nowdf = origdf
     nowdf = searchDF(nowdf, conditionList)
-    if nowdf == False:
+    if type(nowdf) == bool:
         return 0        # 没有找到符合条件的记录                      
     findInd = nowdf.index.tolist()
     return findInd       
