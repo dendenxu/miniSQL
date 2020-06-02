@@ -28,12 +28,12 @@
 % To define colors yourself
 %-----------------------------------------------------------------------------------------
 \usepackage{xcolor} % needed for defining own color
-\definecolor{myred}{RGB}{223, 56, 27}
-\definecolor{myblue}{RGB}{25, 123, 193}
-\definecolor{myorange}{RGB}{225, 107, 65}
-\definecolor{mypink}{RGB}{254, 63, 125}
-\definecolor{mycyan}{RGB}{72, 199, 240}
-\definecolor{mygreen}{RGB}{0, 153, 136}
+% \definecolor{myred}{RGB}{223, 56, 27}
+% \definecolor{myblue}{RGB}{25, 123, 193}
+% \definecolor{myorange}{RGB}{225, 107, 65}
+% \definecolor{mypink}{RGB}{254, 63, 125}
+% \definecolor{mycyan}{RGB}{72, 199, 240}
+% \definecolor{mygreen}{RGB}{0, 153, 136}
 %-----------------------------------------------------------------------------------------
 % To use hyper-reference and stuff
 %-----------------------------------------------------------------------------------------
@@ -271,7 +271,9 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 \section{B+树模块具体实现}
 \subsection{节点操作具体实现}
 节点是B+树中的数据储存元素，每个节点根据要求存储一定数量的排序数据。我们需实首先应实现节点相关操作。算法\ref{alg:binary_searching}实现了一种$O(log\ n)$级别的二分下届查找，用于在某个节点中寻找关键元素。在实际实现中，我们会在C++项目中采用模板，但Python语言的动态类型特性使得这类普适算法很容易应用到具体的数据类型上。
-\begin{algorithm}[H]
+
+
+\begin{breakablealgorithm}
     \caption{General Binary Search}
     \label{alg:binary_searching}
     \begin{algorithmic}[1]
@@ -294,11 +296,11 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
             \State \Return $mid$
         \EndFunction
     \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们正在\textit{节点}模块介绍这一算法，但实际使用中我们往往会通过一颗B+树的根来调用此算法\footnote{本算法会从当前节点开始，一直查询到叶节点。}\footnote{要查找某棵树上的元素，我们只需要从根节点调用此方法。}。
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
     \caption{Find Operation on Node}
     \label{alg:find_on_node}
     \begin{algorithmic}[1]
@@ -318,7 +320,7 @@ B+数的查找操作实现如算法\ref{alg:find_on_node}所示，虽然我们�
             \EndIf
         \EndFunction
     \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 \subsection{辅助函数具体实现}
 为了方便调用/实现B+树相关功能，并提供代码的抽象程度和复用率，我们使用了一些普适性的函数。例如算法\ref{alg:fix_parent}所示的操作会在节点的头元素修改后修改父节点的相关头元素，如图\ref{fig:fix_parent}所示。
@@ -479,7 +481,7 @@ B+树中节点出现异常\footnote{过饱和，欠饱和等。}后，我们可�
 类似插入操纵，我们也会调用上述的\texttt{Find}与\texttt{FixTree}函数来实现B+树中的删除操作。算法\ref{alg:delete_tree}描述了这一过程。
 
 
-\begin{algorithm}[H]
+\begin{breakablealgorithm}
     \caption{Deletion in B+ Tree}
     \label{alg:delete_tree}
     \begin{algorithmic}
@@ -501,7 +503,7 @@ B+树中节点出现异常\footnote{过饱和，欠饱和等。}后，我们可�
             \State $\Call{FixTree}{tree, node}$
         \EndFunction
     \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 \section{异常模块具体实现}
 我们通过异常机制来传递错误信息，省去了检测错误码的冗长代码。实验中B+树和索引管理器模块用到的异常如列表\ref{lst:exception}所示。
@@ -551,7 +553,7 @@ class TreeException(MiniSQLException):
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\linewidth]{figure/sorted_list.eps}
+    \includegraphics[width=0.8\linewidth]{figure/sorted_list.eps}
     \caption{排序数组具体实现}
     \label{fig:sorted_list}
 \end{figure}
@@ -563,8 +565,10 @@ class TreeException(MiniSQLException):
 \subsection{整体索引操作}
 对完整索引进行的操作如算法\ref{alg:index_creation_deletion}所示。
 
-\algnewcommand\algorithmicraise{\textbf{raise}}
-\algnewcommand\Raise{\item[\algorithmicraise]}
+
+% define raise exception for algorithmicx package in pseudocode
+\algnewcommand\algorithmicraise{\textbf{raise }}
+\algnewcommand\Raise{\algorithmicraise}
 
 \begin{algorithm}
     \caption{索引的插入删除}
@@ -583,19 +587,65 @@ class TreeException(MiniSQLException):
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{元素寻找，插入，删除具体实现}
+\subsection{元素查找，插入，删除具体实现}
+在索引管理器中，我们支持如下元素操作：
+\begin{itemize}
+    \item 根据键查找某个元素的内容（返回行号或某种记录指针）。
+    \item 根据两个键查找区间范围内元素的内容（返回行号或记录指针的列表）。
+    \item 通过键值对进行插入操作。
+    \item 根据某个键删除某个元素。
+    \item 根据两个键删除区间元素。
+\end{itemize}
+其中插入操作逻辑最为简单\footnote{原因在于我们已经实现了B+树并提供了相应接口。}，单独实现。而查询、删除操作的逻辑几乎完全相同，我们在实际实现中使用了泛化的\sc{OperateSingle}与\sc{OperateRange}来减少重复代码。在算法\ref{alg:operation_element}所示的伪代码中，我们通过\textbf{查找操作}描述了这一过程以方便读者阅读。
 
 \begin{algorithm}
-    \caption{元素的插入，删除和删除}
+    \caption{元素的查找，插入，和删除}
+    \label{alg:operation_element}
     \begin{algorithmic}
         \Function{InsertElement}{$id$, $key$, $value$}
             \State $tree \leftarrow \Call{GetBufferIndex}{id}$
             \State $\Call{InsertTree}{tree, key, value}$
             \State $\Call{SaveBufferIndex}{tree, ind}$ \Comment{Specify the id, so that buffer manager can replace}
         \EndFunction
+        
+        \Function{FindSingle}{$id$, $key$}
+            \State $tree \leftarrow \Call{GetBufferIndex}{id}$
+            \State $\Call{Group}{node, position, bias} \leftarrow \Call{findTree}{tree, key}$
+            \If{$node.keys[position] \neq key$}
+                \State \Raise $\Call{KeyException}{Cannot\ find\ key}$
+            \Else
+                \State \Return $node.values[position]$
+            \EndIf
+        \EndFunction
+        
+        \Function{FindRange}{$id$, $begin$, $end$}
+            \State $\Call{CheckRange}{begin, end}$ \Comment{Would raise certain error if not valid}
+            \State $tree \leftarrow \Call{GetBufferIndex}{id}$
+            \State $values \leftarrow \Call{NewList}{}$
+            \State $\Call{Group}{nodea, postiona, biasa} \leftarrow \Call{FindTree}{tree, begin}$
+            \State $\Call{Group}{nodez, postionz, biasz} \leftarrow \Call{FindTree}{tree, end}$
+            \If{$nodea = nodez$} \Comment{For simplicity we'd omit the part to check for values within a node for pseudocode (implemented in actual code)}
+                \ForAll{$value \in nodea.values$}
+                    \State $\Call{Append}{values, value}$
+                \EndFor
+            \Else
+                \ForAll{$value \in nodea.values$}
+                    \State $\Call{Append}{values, value}$
+                \EndFor
+                \While{$nodea.right \neq nodez$}
+                    \State $nodea \leftarrow nodea.right$
+                        \ForAll{$value \in nodea.values$}
+                            \State $\Call{Append}{values, value}$
+                        \EndFor
+                \EndWhile
+                \ForAll{$value \in nodez.values$}
+                    \State $\Call{Append}{values, value}$
+                \EndFor
+            \EndIf
+            \State \Return $values$
+        \EndFunction
     \end{algorithmic}
 \end{algorithm}
-
 
 \chapter{遇到的问题及解决方法}
 \chapter{总结}
