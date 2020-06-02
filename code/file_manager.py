@@ -2,6 +2,7 @@ import record_manager
 import pickle
 import pandas as pd
 import os, sys
+import dill
 
 def save_record(fname, record, posR):
     if(posR == 'end'):
@@ -51,13 +52,13 @@ def clear_data_file(fname):
 def save_index_file(Ind, tree):
     tmplist = [Ind,tree]
     f = open(r'.\index\index.txt', 'ab+')
-    pickle.dump(tmplist, f) 
+    dill.dump(tmplist, f) 
     f.close()
 
 def get_index_file(Ind):
     f = open(r'.\index\index.txt', 'rb+')
     while True:
-        tmplist = pickle.load(f)
+        tmplist = dill.load(f)
         if tmplist[0] == Ind:
             f.close()
             return tmplist[1]
