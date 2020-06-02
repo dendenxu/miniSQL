@@ -1,20 +1,10 @@
-def save_index(tree, ind=None):
-    """
-    :param ind: If specified, should replace with current index by ind
-    :param tree: the tree to be saved to disk or memory buffer
-    :return: the index of the saved tree/index
-    """
+import file_manager
+ 
+def get_index(Ind):
+    return file_manager.get_index_file(Ind)
+ 
+def save_index(tree,Ind):
+    save_index_file(Ind, tree)
 
-
-def get_index(ind):
-    """
-    :param ind: the identifier of the index to be extracted
-    :return: the extracted tree/index
-    """
-
-
-def delete_index(ind):
-    """
-    :param ind: the identifier of the index to be deleted
-    :return: nothing yet
-    """
+def delete_index(Ind):
+    pass
