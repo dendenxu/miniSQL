@@ -89,7 +89,7 @@ def _operate_single(t, key, is_search):
         raise KeyException("Cannot find key {} in tree {}".format(key, id(t)), (key, t))
 
 
-def _operate_range(t, keys, is_search):
+def _operate_range(t, keys, is_search, is_current):
     """
     :param t: the tree in consideration
     :param keys: the two keys to be searched, start and end
@@ -108,13 +108,13 @@ def _operate_range(t, keys, is_search):
     _check_range(t, keys)
     if node_a != node_z:
         # handle node_a
-        for pos in range(pos_a, len(node_a.keys)):
+        for pos in range(pos_a + int(not is_current), len(node_a.keys)):
             if is_search:
                 values.append(node_a.values[pos])
             else:
                 t.delete(None, node_a, pos, _)
         # handle nodes between node_a and node_z (not including)
-        node = node_a
+        node = node_a.right
         # if node_a is already node_z, don't do anything
         while node != node_z:
             # delete everything in between onw by one
@@ -133,7 +133,7 @@ def _operate_range(t, keys, is_search):
                 t.delete(None, node_z, pos, _)
     else:
         # handle only this node if start and end is in the same node
-        for pos in range(pos_a, pos_z):
+        for pos in range(pos_a + int(not is_current), pos_z + 1):
             if is_search:
                 values.append(node_a.values[pos])
             else:
@@ -144,12 +144,14 @@ def _operate_range(t, keys, is_search):
         buffer.save_index(t)
 
 
-def _operate(ind, key, is_search):
+def _operate(ind, key, is_search, is_greater, is_current):
     """
     A thin wrapper around _operate_single and _operate_range
     :param ind: the id of the index to be deleted on
     :param key: the key/keys to be deleted (single or range)
     :param is_search: whether we're searching
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
     :return: currently nothing is returned
     """
     assert len(key) == 2 or len(key) == 1, "The length of the key/keys should be one (single) or two (range)"
@@ -158,27 +160,41 @@ def _operate(ind, key, is_search):
     if len(key) == 2:
         return _operate_range(t, key, is_search)
     else:
-        return _operate_single(t, key, is_search)
+        if is_greater is not None and is_current is not None:
+            if is_greater:
+                left = key
+                right, _, _ = t.max
+            else:
+                left, _, _ = t.min
+                right = key
+            return _operate_range(t, [left, right], is_search, is_current)
+
+        else:
+            return _operate_single(t, key, is_search)
 
 
-def search(ind, key):
+def search(ind, key, is_greater=None, is_current=None):
     """
     A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
     :param ind: the id of the index to be deleted on
     :param key: the key/keys to be deleted (single or range)
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=True)
+    return _operate(ind, key, is_search=True, is_greater=is_greater, is_current=is_current)
 
 
-def delete(ind, key):
+def delete(ind, key, is_greater=None, is_current=None):
     """
     A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
     :param ind: the id of the index to be searched on
     :param key: the key/keys to be searched (single or range)
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=False)
+    return _operate(ind, key, is_search=False, is_greater=None, is_current=None)
 
 
 def update_values(ind, values):
