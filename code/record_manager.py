@@ -40,12 +40,13 @@ def searchDF(df, conditionList):            # 内部接口
             df = df[df[cond.attribute] <= cond.value]
         elif cond.type == 5:
             df = df[df[cond.attribute] >= cond.value]
+    return df
 
 def search_record(fname, conditionList):    # 内部接口
     origdf = file_manager.get_data(fname)
     nowdf = origdf
-    state = searchDF(nowdf, conditionList)
-    if state == False:
+    nowdf = searchDF(nowdf, conditionList)
+    if nowdf == False:
         return 0        # 没有找到符合条件的记录                      
     findInd = nowdf.index.tolist()
     return findInd       
@@ -54,10 +55,10 @@ def search_record(fname, conditionList):    # 内部接口
 # indList == 0 时，表示未通过index查找
 def search_record_with_Index(fname, indList, conditionList):    # 内部接口  for delete and select
     findInd = search_record(fname, conditionList)
-    if findInd == 0 or (index!=0 and len(index)==0):
+    if findInd == 0 or (indList!=0 and len(indList)==0):
         return 0
     finalInd = []
-    if(index != 0):
+    if(indList != 0):
         for i in indList:
             for k in i:
                 for j in findInd:
@@ -89,11 +90,15 @@ def delete_record_with_Index(fname, indList, conditionList):            # 外部
 
 def select_record_with_Index(fname, indList, conditionList):            # 外部接口 for select
     selInd = search_record_with_Index(fname, indList, conditionList)
+    compareList = []
+    if fname in freeList:
+        compareList = freeList[fname]
     df = file_manager.get_data(fname)
     selList = dataframe_to_list(df)
     finalselList = []
     for i in selInd:
-        finalselList.append(selList[i])
+        if i not in compareList:
+            finalselList.append(selList[i])
     return finalselList
 
 def create_table(fname):
