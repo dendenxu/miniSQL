@@ -9,27 +9,33 @@ def save_record(fname, record, posR):
         tmplist.append(record)
         df = pd.DataFrame(tmplist)
         df.to_csv(r'.\\data\\' + fname + r'.csv', mode='a', header = False, index = False)
+        dfall = pd.read_csv(r'.\\data\\' + fname + r'.csv', header = None, encoding="gbk")
+        dflist = record_manager.dataframe_to_list(dfall)
+        return len(dflist) - 1
     else:
         df = pd.read_csv(r'.\\data\\' + fname + r'.csv', header = None, encoding="gbk")
         tmplist = record_manager.dataframe_to_list(df)
-        tmplist.insert(posR, record)
+        tmplist[posR] = record
         newdf = record_manager.list_to_dataframe(tmplist)
         newdf.to_csv(r'.\\data\\' + fname + r'.csv', mode='w', header = False, index = False)
+        return posR
 
 def get_data(fname):
     df = pd.read_csv(r'.\\data\\' + fname + r'.csv', header = None, encoding="gbk")
     return df
 
-def del_data(fname, delInd):
-    df = pd.read_csv(r'.\\data\\' + fname + r'.csv', header = None, encoding="gbk")
-    tmplist = record_manager.dataframe_to_list(df)
-    deldatalist = []
-    for i in delInd:
-        deldatalist.append(tmplist[i])
-    for deldata in deldatalist:
-        tmplist.remove(deldata)
-    newdf = record_manager.list_to_dataframe(tmplist)
-    newdf.to_csv(r'.\\data\\' + fname + r'.csv', mode='w', header = False, index = False)
+
+#def del_data(fname, delInd):
+#    df = pd.read_csv(r'.\\data\\' + fname + r'.csv', header = None, encoding="gbk")
+#    tmplist = record_manager.dataframe_to_list(df)
+#    deldatalist = []
+#    for i in delInd:
+#        deldatalist.append(tmplist[i])
+#    for deldata in deldatalist:
+#        tmplist.remove(deldata)
+#    newdf = record_manager.list_to_dataframe(tmplist)
+#    newdf.to_csv(r'.\\data\\' + fname + r'.csv', mode='w', header = False, index = False)
+
 
 def create_data_file(fname):
     f = open(r'.\\data\\' + fname + r'.csv', 'w')
@@ -41,3 +47,27 @@ def delete_data_file(fname):
 def clear_data_file(fname):
     f = open(r'.\\data\\' + fname + r'.csv', 'w')
     f.close()
+
+def save_index_file(Ind, tree):
+    tmplist = [Ind,tree]
+    f = open(r'.\index\index.txt', 'ab+')
+    pickle.dump(tmplist, f) 
+    f.close()
+
+def get_index_file(Ind):
+    f = open(r'.\index\index.txt', 'rb+')
+    while True:
+        tmplist = pickle.load(f)
+        if tmplist[0] == Ind:
+            f.close()
+            return tmplist[1]
+    
+def save_catalog_file(catalogManager):
+    f = open(r'.\catalog\meta.txt', 'wb')
+    pickle.dump(catalogManager,f)
+    f.close()
+
+def get_catalog_file():
+    f = open(r'.\catalog\meta.txt', 'rb+')
+    tmpcat = pickle.load(f)
+    return tmpcat
