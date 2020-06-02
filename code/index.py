@@ -23,8 +23,9 @@ def _check_range(t, keys):
         raise RangeException("Start {} is bigger than end {}".format(keys[0], t.max[0]), (keys, t))
 
 
-def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
+def create_index(ind, data_list, cmp=lambda x, y: x < y, is_primary=False):
     """
+    :param ind: the id of the index to be saved to file
     :param data_list: the data, as list, to create index on
     :param cmp: the comparator of the index, defaults to operator<
     :param is_primary: whether we're dealing with primary key, using sorted list
@@ -41,7 +42,7 @@ def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
         t.insert(data, index)  # insert data as key and line number as value
 
     # TODO: what happens if the disk is full and you cannot save the index on disk?
-    return buffer.save_index(t)
+    return buffer.save_index(t, ind)
 
 
 def drop_index(ind):
