@@ -37,7 +37,7 @@ def create_index(ind, data_list, cmp=lambda x, y: x < y, is_primary=False):
         # TODO: dynamically compute the M value of the B+ tree
         # TODO: what if you're out of memory
         t = Tree(m=6, cmp=cmp)
-    for data, index in enumerate(data_list):
+    for data, index in data_list:
         # TODO: what happens if you get an error from the B+ tree
         t.insert(data, index)  # insert data as key and line number as value
 

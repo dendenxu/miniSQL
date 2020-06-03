@@ -55,19 +55,16 @@ def clear_data_file(fname):
 
 
 def save_index_file(Ind, tree):
-    tmplist = [Ind, tree]
-    f = open(r'.\index\index.txt', 'ab+')
-    dill.dump(tmplist, f)
+    f = open(r'.\index\{}.txt'.format(Ind), 'wb')
+    dill.dump(tree, f)
     f.close()
 
 
 def get_index_file(Ind):
-    f = open(r'.\index\index.txt', 'rb+')
-    while True:
-        tmplist = dill.load(f)
-        if tmplist[0] == Ind:
-            f.close()
-            return tmplist[1]
+    f = open(r'.\index\{}.txt'.format(Ind), 'rb')
+    tree = dill.load(f)
+    f.close()
+    return tree
 
 
 def save_catalog_file(catalogManager):
