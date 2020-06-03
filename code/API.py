@@ -63,6 +63,8 @@ def select(table_name, conditions):
 
 def select_index(table_name, index_conditions):
     index_id = catalog_manager.get_index_id(table_name, index_conditions.attribute_name)
+    print("begin timing")
+    start_time = perf_counter()
     if index_conditions.op == '=':
         # print(index_id,index_conditions.operand)
         # is_search	is_greater	is_current	is_range	is_not_equal
@@ -76,6 +78,8 @@ def select_index(table_name, index_conditions):
                             is_not_equal=False)
     elif index_conditions.op == '<>':
         temp = index.search(index_id, index_conditions.operand, is_range=True, is_not_equal=True)
+    end_time = perf_counter()
+    print("Index has done it's job, {:.4f}s elapsed".format(end_time-start_time))
     if (type(temp) == int):
         print(record_manager.select_record_with_Index(table_name, [[temp]], []))
     else:
@@ -84,7 +88,10 @@ def select_index(table_name, index_conditions):
 
 def delete(table_name, conditions):
     if_index = catalog_manager.check_index(table_name, conditions.attribute_name)
+    print("if_index evaluates to {}", if_index, end="")
     if if_index:
+        print("begin timing")
+        start_time = perf_counter()
         index_id = catalog_manager.get_index_id(table_name, conditions.attribute_name)
         if conditions.op == '=':
             temp = index.delete(index_id, conditions.operand, is_range=False, is_not_equal=False)
@@ -96,6 +103,8 @@ def delete(table_name, conditions):
                                 is_not_equal=False)
         elif conditions.op == '<>':
             temp = index.delete(index_id, conditions.operand, is_range=True, is_not_equal=True)
+        end_time = perf_counter()
+        print("Index has done it's job, {:.4f}s elapsed".format(end_time-start_time))
         if (type(temp) == int):
             print(record_manager.select_record_with_Index(table_name, [[temp]], []))
         else:

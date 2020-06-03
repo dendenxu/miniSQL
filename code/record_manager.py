@@ -62,6 +62,7 @@ def search_record(fname, conditionList):  # 内部接口
 # indList == 空列表 时，表示index没找到东西
 # indList == 0 时，表示未通过index查找
 def search_record_with_Index(fname, indList, conditionList):  # 内部接口  for delete and select
+    print("I'm searching with index! {}".format(indList))
     findInd = search_record(fname, conditionList)
     if findInd == 0 or (indList != 0 and len(indList) == 0):
         return 0
@@ -81,6 +82,7 @@ def search_record_with_Index(fname, indList, conditionList):  # 内部接口  fo
 
 
 def delete_record_with_Index(fname, indList, conditionList):  # 外部接口 for delete
+    print("I'm deleting with index! {}".format(indList))
     delInd = search_record_with_Index(fname, indList, conditionList)
     if type(delInd) == int:
         return 0
@@ -100,6 +102,8 @@ def delete_record_with_Index(fname, indList, conditionList):  # 外部接口 for
     return finaldelInd
 
 
+from time import perf_counter
+
 def select_record_with_Index(fname, indList, conditionList):  # 外部接口 for select
     selInd = search_record_with_Index(fname, indList, conditionList)
     if type(selInd) == int:
@@ -107,7 +111,10 @@ def select_record_with_Index(fname, indList, conditionList):  # 外部接口 for
     compareList = []
     if fname in freeList:
         compareList = freeList[fname]
+    start_time = perf_counter()
     df = file_manager.get_data(fname)
+    end_time = perf_counter()
+    print("Loading data took: {:.4f}".format(end_time-start_time))
     selList = dataframe_to_list(df)
     finalselList = []
     for i in selInd:
