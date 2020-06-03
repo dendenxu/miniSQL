@@ -206,14 +206,23 @@ def command_prompt(file_file=None):
             command += thi_command
         if command == '':
             continue
-        elif command == 'exit':
+        elif command == 'exit;':
             sql_exit()
             return
         else:
             print(command)
-            execute(parser.translate(command))
+            print(type(command))
+            try:
+                execute(parser.translate(command))
+            except:
+                sql_exit()
+                raise
+
+
+def main():
+    init()
+    command_prompt()
 
 
 if __name__ == '__main__':
-    init()
-    command_prompt()
+    main()
