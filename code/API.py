@@ -141,16 +141,30 @@ def insert(table_name, values):
         value.append(values[i[0]])
     attr1=catalog_manager.get_primary(table_name)
     index_id=catalog_manager.get_index_id(table_name,attr1)
-    try:
-        temp = index.search(index_id, values[attr1], is_range=False, is_not_equal=False)
-    except Exception:
-        line = record_manager.insert_record(table_name, value)
-        for attr_ in attr:
-            attr_name = attr_[0]
-            if catalog_manager.check_index(table_name, attr_name) == 1:
-                index.insert(catalog_manager.get_index_id(table_name, attr_name), values[attr_name], line)
-    else:
-        print("Key value has already exists\n")
+    for i in attr:
+        attr2=i[0]
+        if catalog_manager.check_unique(table_name,attr2)==1:
+            if catalog_manager.check_index(table_name,attr2)==1:
+                try:
+                    temp=index.search(catalog_manager.get_index_id(table_name,attr2),values[attr2],is_range=False, is_not_equal=False)
+                except Exception:
+                    temp=[]
+                else:
+                    print("Unique value has already exists\n")
+                    return
+            else:
+                conditionlist=[]
+                condition=Condition_2(catalog_manager.get_attribute_cnt(table_name,attr2),0,values[attr2])
+                conditionlist.append(condition)
+                temp=record_manager.select_record_with_Index(table_name,0,conditionlist)
+                if len(temp)!=0:
+                    print("Unique value has already exists\n")
+                    return
+    line = record_manager.insert_record(table_name, value)
+    for attr_ in attr:
+        attr_name = attr_[0]
+        if catalog_manager.check_index(table_name, attr_name) == 1:
+            index.insert(catalog_manager.get_index_id(table_name, attr_name), values[attr_name], line)
 
 
 def drop_index(index_name):
