@@ -78,6 +78,9 @@ def save_catalog_file(catalogManager):
 
 
 def get_catalog_file():
-    f = open(r'.\catalog\meta.txt', 'rb+')
+    try:
+        f = open(r'.\catalog\meta.txt', 'rb+')
+    except:
+        return None
     tmpcat = pickle.load(f)
     return tmpcat

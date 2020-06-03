@@ -179,7 +179,7 @@ def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal
     else:
         values = _operate_single(t, key, is_search)
         buffer.save_index(t, ind)
-        return values
+    return values
 
 
 def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):

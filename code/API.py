@@ -13,8 +13,9 @@ parser = None
 
 def init():
     global catalog_manager, parser
-    # catalog_manager = file_manager.get_catalog_file()
-    catalog_manager = catalogmanager.CatalogManager()
+    catalog_manager = file_manager.get_catalog_file()
+    if catalog_manager is None:
+        catalog_manager = catalogmanager.CatalogManager()
     parser = interpreter.command(catalog_manager)
 
 
