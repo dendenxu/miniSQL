@@ -182,12 +182,15 @@ def command_prompt(file_file=None):
             if file_file is None:
                 thi_command = input('>> ').strip()
             else:
-                thi_command = file_file.readline().strip()
+                thi_command = file_file.readline().strip()[0:-1]
             temp = thi_command.split('#', 1)
             thi_command = temp[0]
             command += thi_command
         if command == '':
             continue
+        elif command == "" and file_file is not None:
+            # EOF reached
+            return
         elif command == 'exit':
             sql_exit()
             return
