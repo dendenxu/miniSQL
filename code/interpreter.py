@@ -80,7 +80,7 @@ class command:
 
     def read_file(self, inst):
         result = {}
-        result['type'] = 'file'
+        result['type'] = 'read_file'
         result["file_name"] = inst[1]
         return result
 
