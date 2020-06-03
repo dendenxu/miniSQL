@@ -211,9 +211,6 @@ class command:
             self.error_tp = error.syn
             return
         new_index.attribute_name =inst[i]
-        if self.catalog.check_index(new_index.table_name,new_index.attribute_name ):
-            self.error_tp=error.not_exist_i
-            return
         # if (self.catalog.check_unique(new_index.table_name,new_index.attribute_name )!=1):  也是不知道为什么不对的
         #     self.error_tp = error.no_unq_a
         #     return
