@@ -145,7 +145,7 @@ def _operate_range(t, keys, is_search, is_current):
         buffer.save_index(t)
 
 
-def _operate(ind, key, is_search, is_greater, is_current):
+def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal=False):
     """
     A thin wrapper around _operate_single and _operate_range
     :param ind: the id of the index to be deleted on
@@ -153,12 +153,18 @@ def _operate(ind, key, is_search, is_greater, is_current):
     :param is_search: whether we're searching
     :param is_current: whether we want a single value range search with current node
     :param is_greater: whether we want a single value range search of greater than
+    :param is_range: are we searching in range?
     :return: currently nothing is returned
     """
-    assert type(key) == int or len(key) == 2, "The length of the key/keys should be one (single) or two (range)"
+    # assert type(key) == int or len(key) == 2, "The length of the key/keys should be one (single) or two (range)"
     # TODO: what if we cannot get what we want
     t = buffer.get_index(ind)
-    if type(key) == int:
+    if is_range:
+        # TODO: clean up buffer operations in _operate_range function
+        if is_not_equal:
+            values = _operate(ind, key, is_search, True, False, True)
+            values += _operate(ind, key, is_search, False, False, True)
+            return values
         if is_greater is not None and is_current is not None:
             if is_greater:
                 left = key
@@ -167,26 +173,26 @@ def _operate(ind, key, is_search, is_greater, is_current):
                 left, _, _ = t.min
                 right = key
             return _operate_range(t, [left, right], is_search, is_current)
-
         else:
             return _operate_single(t, key, is_search)
     else:
         return _operate_range(t, key, is_search, is_current)
 
 
-def search(ind, key, is_greater=None, is_current=None):
+def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
     """
     A thin wrapper around _operate
     :param is_current: whether we want a single value range search with current node
     :param is_greater: whether we want a single value range search of greater than
     :param ind: the id of the index to be deleted on
     :param key: the key/keys to be deleted (single or range)
+    :param is_range: are we searching in range?
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=True, is_greater=is_greater, is_current=is_current)
+    return _operate(ind, key, is_search=True, is_greater=is_greater, is_current=is_current, is_range=is_range, is_not_equal=is_not_equal)
 
 
-def delete(ind, key, is_greater=None, is_current=None):
+def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
     """
     A thin wrapper around _operate
     :param is_current: whether we want a single value range search with current node
@@ -195,7 +201,7 @@ def delete(ind, key, is_greater=None, is_current=None):
     :param key: the key/keys to be searched (single or range)
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=False, is_greater=None, is_current=None)
+    return _operate(ind, key, is_search=False, is_greater=None, is_current=None, is_range=is_range, is_not_equal=is_not_equal)
 
 
 def update_values(ind, values):
