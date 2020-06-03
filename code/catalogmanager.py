@@ -33,9 +33,11 @@ class CatalogManager:
         return 0
 
     def check_unique(self,table_name,attribute_name):
-        for i in self.index:
-            if i.table_name == table_name and i.attribute_name == attribute_name:
-                return i.isUnique
+        for i in self.table:
+            if i.name == table_name:  # find the table
+                for j in i.attributeList:
+                    if j.isUnique== True and j.name==attribute_name:  # find the primary key
+                        return 1
         return 0
 
     def check_attribute(self,table_name,attribute_name):
@@ -90,7 +92,7 @@ class CatalogManager:
 
     def check_index_name(self,index_name):
         for i in self.index:
-            if i.name==index_name:
+            if i.index_name==index_name:
                 return 1
         return 0
 

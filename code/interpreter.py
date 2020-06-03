@@ -4,30 +4,6 @@ import copy
 import catalogmanager
 from minisqlclass import *
 
-
-class error_type:
-    def __init__(self):
-        self.NONE = ""
-        self.syn = "Error : syntax error"
-        self.ivld_cmd = "Error : No query specified"
-        self.exist_t = "Error : table is exist"
-        self.exist_i = "Error : index is exist"
-        self.exist_attrib = "Error : attribute is exist"
-        self.not_exist_t = "Error : table is not exist"
-        self.not_exist_i = "Error : index is not exist"
-        self.not_exist_a = "Error : attribute  is not exist"
-        self.ivld_char = "Error : invalid chat"
-        self.ivld_dt_tp = "Error : invalid data type"
-        self.no_prim_k = "Error : no primary key"
-        self.invalid_prim_k = "Error : invalid primary key"
-        self.not_exist_k = "Error : key is not exist"
-        self.ept_i = "Error : empty index"
-        self.ept_t = "Error : empty table"
-        self.no_unq_a = "Error : the attribute is not unique"
-        self.insert_not_match = "Error : insert data not match"
-        self.out_of_range = "Error : data out of range"
-
-
 error = error_type()
 
 
@@ -92,11 +68,11 @@ class command:
         if len(inst) < 3:
             self.error_tp = error.syn
             return
-        if self.catalog.check_table(new_table.name):
-            self.error_tp = error.exist_t
-            return
         result['table_name'] = inst[2]
         new_table.name = inst[2]
+        if self.catalog.check_table(new_table.name)==1:
+            self.error_tp = error.exist_t
+            return
         i = 3
         have_pri = False
         while i < len(inst):
@@ -214,12 +190,12 @@ class command:
             return
         new_index.attribute_name =inst[i]
         new_index.attribute_name = inst[i]
-        # if self.catalog.check_index(new_index.table_name, new_index.attribute_name):
-        #     self.error_tp = error.not_exist_i
-        #     return
-        # if (self.catalog.check_unique(new_index.table_name,new_index.attribute_name )!=1):  也是不知道为什么不对的
-        #     self.error_tp = error.no_unq_a
-        #     return
+        if self.catalog.check_index(new_index.table_name, new_index.attribute_name)==1:
+            self.error_tp = error.exist_i
+            return
+        if (self.catalog.check_unique(new_index.table_name,new_index.attribute_name )!=1):
+            self.error_tp = error.no_unq_a
+            return
         new_index.index_id = self.catalog.indexcnt
         self.catalog.indexcnt = self.catalog.indexcnt + 1
         result['new_index'] = new_index
@@ -243,10 +219,9 @@ class command:
         if len(inst) < 3:
             self.error_tp = error.syn
             return
-        # if (self.catalog.check_index_name(inst[2])!=1): 仍然是不知道为什么不对的
-        #     self.error_tp = error.not_exist_i
-        #     return
-        # print("meow")
+        if (self.catalog.check_index_name(inst[2])!=1):
+            self.error_tp = error.not_exist_i
+            return
         result['index_name'] = inst[2]
         return result
 
@@ -308,6 +283,9 @@ class command:
                 i = i + 1
                 while i < len(inst):
                     attrib_name = inst[i]
+                    if self.catalog.check_attribute(result['table_name'],attrib_name)!=1:
+                        self.error_tp = error.not_exist_a
+                        return
                     if i + 1 >= len(inst):
                         self.error_tp = error.syn
                         return
@@ -409,6 +387,9 @@ class command:
         while i < len(inst):
             if i + 2 >= len(inst):
                 self.error_tp = error.syn
+                return
+            if self.catalog.check_attribute(result['table_name'], inst[i]) != 1:
+                self.error_tp = error.not_exist_a
                 return
             nowtype = self.catalog.get_attribute_type(result['table_name'], inst[i])
             if nowtype == 'float':

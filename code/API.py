@@ -179,7 +179,7 @@ def execute(command_dict):
     # print(command_dict)
     start_time = perf_counter()
     if command_dict == None:
-        print(parser.error_type)
+        print(parser.error_tp)
         return
     if len(command_dict) == 0:
         print('ERROR: invalid command')

@@ -79,3 +79,25 @@ class Condition_2:
         self.attribute = attribute
         self.type = type            # 0:等于 ; 1:小于 ; 2:大于 ; 3:不等于
         self.value = value
+
+class error_type:
+    def __init__(self):
+        self.NONE = ""
+        self.syn = "Error : syntax error"
+        self.ivld_cmd = "Error : No query specified"
+        self.exist_t = "Error : table is exist"
+        self.exist_i = "Error : index is exist"
+        self.exist_attrib = "Error : attribute is exist"
+        self.not_exist_t = "Error : table is not exist"
+        self.not_exist_i = "Error : index is not exist"
+        self.not_exist_a = "Error : attribute  is not exist"
+        self.ivld_char = "Error : invalid chat"
+        self.ivld_dt_tp = "Error : invalid data type"
+        self.no_prim_k = "Error : no primary key"
+        self.invalid_prim_k = "Error : invalid primary key"
+        self.not_exist_k = "Error : key is not exist"
+        self.ept_i = "Error : empty index"
+        self.ept_t = "Error : empty table"
+        self.no_unq_a = "Error : the attribute is not unique"
+        self.insert_not_match = "Error : insert data not match"
+        self.out_of_range = "Error : data out of range"
