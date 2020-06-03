@@ -3,10 +3,8 @@ Theoretically this implementation of B+ tree in Python
 should support any data type in python
 to avoid introducing complexity and to program natively
 we don't import 3rd party package to this implementation of B+ tree
-
 However if we're to optimize for operations on large trunk of data
 we can import numpy as np and change data structures to np.array
-
 Moreover there's implementation of BPlusTree in python already, if we're to be lazy
 we can simply pip install bplustree
 and from bplustree import BPlusTree
@@ -38,7 +36,6 @@ def search(items, key, cmp=lambda x, y: x < y):
 def _check(m, n, is_root=False):
     """
     Check whether a node is over-full or under-full, needs splitting or merging
-
     :param m:
     :param n:
     :param is_root:
@@ -58,7 +55,6 @@ def _check(m, n, is_root=False):
 def _find(node, key, cmp=lambda x, y: x < y):
     """
     find an element by key beginning from node, defined as function to be called recursively
-
     :param Node node: the node to begin the find process with
     :param comparable object key: the key we're trying to find
     :param comparator function cmp: the comparator function, takes two args and return True if arg1 < arg2
@@ -86,7 +82,6 @@ class Node:
     def check(self, is_root=False):
         """
         Check whether the node itself is full, calls _check
-
         :param is_root:
         :return:
         """
@@ -95,7 +90,6 @@ class Node:
     def find(self, key, cmp=lambda x, y: x < y):
         """
         Find lower bound of an element, beginning from this node, calls _find
-
         :param key:
         :param cmp:
         :return:
@@ -105,7 +99,6 @@ class Node:
     def __str__(self):  # debugging string
         """
         Convert the Node to string for output (used in debugging)
-
         :return: the converted string
         """
         to_string = ""
@@ -131,7 +124,6 @@ def _fix_parent(node):
     """
     Get the right position to update and update the parent of a node
     when node's position in parent is -1, go up, else update and abort
-
     :param node: the node whose parent needs updating
     :return:
     """
@@ -147,7 +139,6 @@ def _fix_on_sibling(m, node, is_left, is_deleting=False):
     """
     The node is over/under full, borrowing/sending key-value parts to a valid sibling
     if no sibling is valid, return False so that caller can split or merge node(s)
-
     :param m:
     :param node:
     :param is_left:
@@ -184,7 +175,6 @@ class Tree:
     and we assign variable a to b
     b won't be copying full content of a in memory
     instead we'd store pointer to a in b
-
     This feature enables us to implement tree like data structure in Python quite easily
     """
 
@@ -237,7 +227,6 @@ class Tree:
     def find(self, key):
         """
         calls find on root node
-
         :param key: the key we're trying to find
         :return:
         """
@@ -247,7 +236,6 @@ class Tree:
         """
         insert a key-value pair into the B+ tree
         might need splitting or fixing on siblings
-
         :param is_replace: whether to replace on duplication
         :param key: the key to be inserted, used in find
         :param value: the value, usually a pointer or line number
@@ -280,7 +268,6 @@ class Tree:
         """
         Delete a key value pair
         can specify the position by hand or let the deleter find it for you
-
         :param key: the key to delete
         :param node: the position to delete, None by default
         :param pos: the position to delete, None by default
@@ -309,7 +296,6 @@ class Tree:
         """
         Fix a node if it's over-full or under-full, iteratively peculate up to fix the node's parent
         uses _check to determine we're deleting or inserting
-
         :param node: the node we should try to fix
         :return:
         """
@@ -432,80 +418,80 @@ class SortedList:
         del node.keys[pos]
         return True
 
-
-if __name__ == "__main__":
-    def insert_test_int(tree):
-        tree.insert(0, "Hello, world.")
-        tree.insert(5, "Hello, again.")
-        tree.insert(10, "Hello, hi.")
-        # print(t)
-        tree.insert(15, "Hello, bad.")
-        tree.insert(20, "Hello, bad.")
-        tree.insert(25, "Hello, bad.")
-        tree.insert(11, "bad, damn")
-        tree.insert(12, "gotta ya")
-        tree.insert(13, "gotta ya")
-        tree.insert(14, "gotta ya")
-        tree.insert(28, "gotta ya")
-        try:
-            tree.insert(29, "gotta ya")
-            tree.insert(29, "gotta ya")
-            tree.insert(29, "gotta ya")
-        except KeyException as e:
-            print(e)
-        print(tree)
-
-
-    def insert_test_str(tree):
-        tree.insert("0", "Hello, world.")
-        tree.insert("5", "Hello, again.")
-        tree.insert("10", "Hello, hi.")
-        tree.insert("15", "Hello, bad.")
-        tree.insert("20", "Hello, bad.")
-        tree.insert("25", "Hello, bad.")
-        tree.insert("11", "bad, damn")
-        tree.insert("12", "gotta ya")
-        tree.insert("13", "gotta ya")
-        tree.insert("14", "gotta ya")
-        tree.insert("28", "gotta ya")
-        try:
-            tree.insert("29", "gotta ya")
-            tree.insert("29", "gotta ya")
-            tree.insert("29", "gotta ya")
-        except KeyException as e:
-            print(e)
-        print(tree)
-
-
-    for m_value in range(9, 2, -1):
-        print("Currently tesing tree with m={}".format(m_value))
-        t = Tree(m_value)
-        insert_test_int(t)
-    # don't try this, since when m = 2, some of the insertion splitting case is undefine
-    # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
-    # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
-    # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 should be deleted here!
-    # t = Tree(2)
-    # insert_test(t)
-    t = Tree(3)
-    insert_test_int(t)
-    t.delete(28)
-    print(t)
-    t.delete(29)
-    print(t)
-
-    t = Tree(5)
-    insert_test_int(t)
-    t.delete(20)
-    t.delete(25)
-    t.delete(28)
-    t.delete(29)
-    print(t)
-
-    t = Tree(4)
-    insert_test_str(t)
-
-    print(t)
-
-    print(t.min)
-    print(t.max)
+#
+# if __name__ == "__main__":
+#     def insert_test_int(tree):
+#         tree.insert(0, "Hello, world.")
+#         tree.insert(5, "Hello, again.")
+#         tree.insert(10, "Hello, hi.")
+#         # print(t)
+#         tree.insert(15, "Hello, bad.")
+#         tree.insert(20, "Hello, bad.")
+#         tree.insert(25, "Hello, bad.")
+#         tree.insert(11, "bad, damn")
+#         tree.insert(12, "gotta ya")
+#         tree.insert(13, "gotta ya")
+#         tree.insert(14, "gotta ya")
+#         tree.insert(28, "gotta ya")
+#         try:
+#             tree.insert(29, "gotta ya")
+#             tree.insert(29, "gotta ya")
+#             tree.insert(29, "gotta ya")
+#         except KeyException as e:
+#             print(e)
+#         print(tree)
+#
+#
+#     def insert_test_str(tree):
+#         tree.insert("0", "Hello, world.")
+#         tree.insert("5", "Hello, again.")
+#         tree.insert("10", "Hello, hi.")
+#         tree.insert("15", "Hello, bad.")
+#         tree.insert("20", "Hello, bad.")
+#         tree.insert("25", "Hello, bad.")
+#         tree.insert("11", "bad, damn")
+#         tree.insert("12", "gotta ya")
+#         tree.insert("13", "gotta ya")
+#         tree.insert("14", "gotta ya")
+#         tree.insert("28", "gotta ya")
+#         try:
+#             tree.insert("29", "gotta ya")
+#             tree.insert("29", "gotta ya")
+#             tree.insert("29", "gotta ya")
+#         except KeyException as e:
+#             print(e)
+#         print(tree)
+#
+#
+#     for m_value in range(9, 2, -1):
+#         print("Currently tesing tree with m={}".format(m_value))
+#         t = Tree(m_value)
+#         insert_test_int(t)
+#     # don't try this, since when m = 2, some of the insertion splitting case is undefine
+#     # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
+#     # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
+#     # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 should be deleted here!
+#     # t = Tree(2)
+#     # insert_test(t)
+#     t = Tree(3)
+#     insert_test_int(t)
+#     t.delete(28)
+#     print(t)
+#     t.delete(29)
+#     print(t)
+#
+#     t = Tree(5)
+#     insert_test_int(t)
+#     t.delete(20)
+#     t.delete(25)
+#     t.delete(28)
+#     t.delete(29)
+#     print(t)
+#
+#     t = Tree(4)
+#     insert_test_str(t)
+#
+#     print(t)
+#
+#     print(t.min)
+#     print(t.max)
