@@ -155,12 +155,10 @@ def _operate(ind, key, is_search, is_greater, is_current):
     :param is_greater: whether we want a single value range search of greater than
     :return: currently nothing is returned
     """
-    assert len(key) == 2 or len(key) == 1, "The length of the key/keys should be one (single) or two (range)"
+    assert type(key) == int or len(key) == 2, "The length of the key/keys should be one (single) or two (range)"
     # TODO: what if we cannot get what we want
     t = buffer.get_index(ind)
-    if len(key) == 2:
-        return _operate_range(t, key, is_search)
-    else:
+    if type(key) == int:
         if is_greater is not None and is_current is not None:
             if is_greater:
                 left = key
@@ -172,6 +170,8 @@ def _operate(ind, key, is_search, is_greater, is_current):
 
         else:
             return _operate_single(t, key, is_search)
+    else:
+        return _operate_range(t, key, is_search, is_current)
 
 
 def search(ind, key, is_greater=None, is_current=None):

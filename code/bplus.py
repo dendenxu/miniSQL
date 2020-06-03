@@ -263,16 +263,16 @@ class Tree:
         node, pos, bias = self.find(key)
         if node.keys[pos] == key:
             if is_replace:
-                node.values[pos + bias] = value
+                node.values[pos] = value
                 return
             else:
                 # Duplication and should not replace
                 raise KeyException("Duplicated key {} in tree {}".format(key, id(self)), (key, self))
         # print(node, pos, bias)
-        pos += bias
+        # pos += bias
         # update info on the leaf node
-        node.keys.insert(pos, key)
-        node.values.insert(pos, value)
+        node.keys.insert(pos + 1, key)
+        node.values.insert(pos + 1, value)
         self._fix(node)
         return True
 
