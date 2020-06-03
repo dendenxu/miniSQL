@@ -174,9 +174,9 @@ def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal
                 right = key
             return _operate_range(t, [left, right], is_search, is_current)
         else:
-            return _operate_single(t, key, is_search)
+            return _operate_range(t, key, is_search, is_current)
     else:
-        return _operate_range(t, key, is_search, is_current)
+        return _operate_single(t, key, is_search)
 
 
 def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
