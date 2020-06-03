@@ -31,3 +31,7 @@ class RangeException(MiniSQLException):
 class TreeException(MiniSQLException):
     def __init__(self, message, errors=None):
         super().__init__(message, errors)
+
+
+def dummy_cmp(x, y):
+    return x < y

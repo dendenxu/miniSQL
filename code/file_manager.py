@@ -60,13 +60,13 @@ def delete_index_file(Ind):
 
 def save_index_file(Ind, tree):
     f = open(r'.\index\{}.txt'.format(Ind), 'wb')
-    dill.dump(tree, f)
+    pickle.dump(tree, f)
     f.close()
 
 
 def get_index_file(Ind):
     f = open(r'.\index\{}.txt'.format(Ind), 'rb')
-    tree = dill.load(f)
+    tree = pickle.load(f)
     f.close()
     return tree
 

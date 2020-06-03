@@ -22,7 +22,7 @@ def _check_range(t, keys):
         raise RangeException("Start {} is bigger than end {}".format(keys[0], t.max[0]), (keys, t))
 
 
-def create_index(ind, data_list, cmp=lambda x, y: x < y, is_primary=False):
+def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
     """
     :param ind: the id of the index to be saved to file
     :param data_list: the data, as list, to create index on
@@ -35,7 +35,7 @@ def create_index(ind, data_list, cmp=lambda x, y: x < y, is_primary=False):
     else:
         # TODO: dynamically compute the M value of the B+ tree
         # TODO: what if you're out of memory
-        t = Tree(m=6, cmp=cmp)
+        t = Tree(m=50, cmp=cmp)
     for index, data in enumerate(data_list):
         # TODO: what happens if you get an error from the B+ tree
         t.insert(data, index)  # insert data as key and line number as value

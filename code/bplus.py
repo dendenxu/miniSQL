@@ -12,7 +12,7 @@ and from bplustree import BPlusTree
 from exceptions import *
 
 
-def search(items, key, cmp=lambda x, y: x < y):
+def search(items, key, cmp=dummy_cmp):
     """
     binary search
     :param iterable items: the iterable to perform bin_search on
@@ -52,7 +52,7 @@ def _check(m, n, is_root=False):
         return 0 if m - 1 >= n else 1
 
 
-def _find(node, key, cmp=lambda x, y: x < y):
+def _find(node, key, cmp=dummy_cmp):
     """
     find an element by key beginning from node, defined as function to be called recursively
     :param Node node: the node to begin the find process with
@@ -87,7 +87,7 @@ class Node:
         """
         return _check(self.m, len(self.keys), is_root)
 
-    def find(self, key, cmp=lambda x, y: x < y):
+    def find(self, key, cmp=dummy_cmp):
         """
         Find lower bound of an element, beginning from this node, calls _find
         :param key:
@@ -178,7 +178,7 @@ class Tree:
     This feature enables us to implement tree like data structure in Python quite easily
     """
 
-    def __init__(self, m=4, cmp=lambda x, y: x < y):
+    def __init__(self, m=4, cmp=dummy_cmp):
         self.m = m
         self.cmp = cmp
         self.root = Node(True, m=self.m)  # initially the root is also a leaf
@@ -387,7 +387,7 @@ class SortedList:
     It should only contain values, but not key
     """
 
-    def __init__(self, cmp=lambda x, y: x < y):
+    def __init__(self, cmp=dummy_cmp):
         self.cmp = cmp
         self.root = Node()  # a single node as list
         self.root.values = PositionList()  # should return 1 if you call root.values[1]
@@ -418,80 +418,80 @@ class SortedList:
         del node.keys[pos]
         return True
 
-#
-# if __name__ == "__main__":
-#     def insert_test_int(tree):
-#         tree.insert(0, "Hello, world.")
-#         tree.insert(5, "Hello, again.")
-#         tree.insert(10, "Hello, hi.")
-#         # print(t)
-#         tree.insert(15, "Hello, bad.")
-#         tree.insert(20, "Hello, bad.")
-#         tree.insert(25, "Hello, bad.")
-#         tree.insert(11, "bad, damn")
-#         tree.insert(12, "gotta ya")
-#         tree.insert(13, "gotta ya")
-#         tree.insert(14, "gotta ya")
-#         tree.insert(28, "gotta ya")
-#         try:
-#             tree.insert(29, "gotta ya")
-#             tree.insert(29, "gotta ya")
-#             tree.insert(29, "gotta ya")
-#         except KeyException as e:
-#             print(e)
-#         print(tree)
-#
-#
-#     def insert_test_str(tree):
-#         tree.insert("0", "Hello, world.")
-#         tree.insert("5", "Hello, again.")
-#         tree.insert("10", "Hello, hi.")
-#         tree.insert("15", "Hello, bad.")
-#         tree.insert("20", "Hello, bad.")
-#         tree.insert("25", "Hello, bad.")
-#         tree.insert("11", "bad, damn")
-#         tree.insert("12", "gotta ya")
-#         tree.insert("13", "gotta ya")
-#         tree.insert("14", "gotta ya")
-#         tree.insert("28", "gotta ya")
-#         try:
-#             tree.insert("29", "gotta ya")
-#             tree.insert("29", "gotta ya")
-#             tree.insert("29", "gotta ya")
-#         except KeyException as e:
-#             print(e)
-#         print(tree)
-#
-#
-#     for m_value in range(9, 2, -1):
-#         print("Currently tesing tree with m={}".format(m_value))
-#         t = Tree(m_value)
-#         insert_test_int(t)
-#     # don't try this, since when m = 2, some of the insertion splitting case is undefine
-#     # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
-#     # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
-#     # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 should be deleted here!
-#     # t = Tree(2)
-#     # insert_test(t)
-#     t = Tree(3)
-#     insert_test_int(t)
-#     t.delete(28)
-#     print(t)
-#     t.delete(29)
-#     print(t)
-#
-#     t = Tree(5)
-#     insert_test_int(t)
-#     t.delete(20)
-#     t.delete(25)
-#     t.delete(28)
-#     t.delete(29)
-#     print(t)
-#
-#     t = Tree(4)
-#     insert_test_str(t)
-#
-#     print(t)
-#
-#     print(t.min)
-#     print(t.max)
+
+if __name__ == "__main__":
+    def insert_test_int(tree):
+        tree.insert(0, "Hello, world.")
+        tree.insert(5, "Hello, again.")
+        tree.insert(10, "Hello, hi.")
+        # print(t)
+        tree.insert(15, "Hello, bad.")
+        tree.insert(20, "Hello, bad.")
+        tree.insert(25, "Hello, bad.")
+        tree.insert(11, "bad, damn")
+        tree.insert(12, "gotta ya")
+        tree.insert(13, "gotta ya")
+        tree.insert(14, "gotta ya")
+        tree.insert(28, "gotta ya")
+        try:
+            tree.insert(29, "gotta ya")
+            tree.insert(29, "gotta ya")
+            tree.insert(29, "gotta ya")
+        except KeyException as e:
+            print(e)
+        print(tree)
+
+
+    def insert_test_str(tree):
+        tree.insert("0", "Hello, world.")
+        tree.insert("5", "Hello, again.")
+        tree.insert("10", "Hello, hi.")
+        tree.insert("15", "Hello, bad.")
+        tree.insert("20", "Hello, bad.")
+        tree.insert("25", "Hello, bad.")
+        tree.insert("11", "bad, damn")
+        tree.insert("12", "gotta ya")
+        tree.insert("13", "gotta ya")
+        tree.insert("14", "gotta ya")
+        tree.insert("28", "gotta ya")
+        try:
+            tree.insert("29", "gotta ya")
+            tree.insert("29", "gotta ya")
+            tree.insert("29", "gotta ya")
+        except KeyException as e:
+            print(e)
+        print(tree)
+
+
+    for m_value in range(9, 2, -1):
+        print("Currently tesing tree with m={}".format(m_value))
+        t = Tree(m_value)
+        insert_test_int(t)
+    # don't try this, since when m = 2, some of the insertion splitting case is undefine
+    # for example when you've got |:5:|\n|:0:|:5:| and you wanna insert 10 into this
+    # |:5:|\n|:0:|:5:10:| should split, getting |:5:10:|\n|:0:|:5:|:10:|
+    # and this should be split too, getting |:10:|\n|:5:|:10:|\n|:0:|:5:|:10:| and 10 should be deleted here!
+    # t = Tree(2)
+    # insert_test(t)
+    t = Tree(3)
+    insert_test_int(t)
+    t.delete(28)
+    print(t)
+    t.delete(29)
+    print(t)
+
+    t = Tree(5)
+    insert_test_int(t)
+    t.delete(20)
+    t.delete(25)
+    t.delete(28)
+    t.delete(29)
+    print(t)
+
+    t = Tree(4)
+    insert_test_str(t)
+
+    print(t)
+
+    print(t.min)
+    print(t.max)
