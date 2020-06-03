@@ -84,7 +84,7 @@ def _operate_single(t, key, is_search):
             return node.values[pos]
         else:
             t.delete(None, node, pos, bias)
-            buffer.save_index(t)
+            # buffer.save_index(t)
     else:
         raise KeyException("Cannot find key {} in tree {}".format(key, id(t)), (key, t))
 
@@ -140,8 +140,8 @@ def _operate_range(t, keys, is_search, is_current):
                 t.delete(None, node_a, pos, _)
     if is_search:
         return values
-    else:
-        buffer.save_index(t)
+    # else:
+    #     buffer.save_index(t)
 
 
 def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal=False):
@@ -161,6 +161,8 @@ def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal
     if is_range:
         # TODO: clean up buffer operations in _operate_range function
         if is_not_equal:
+            if t.cmp(key, t.min[0]) or t.cmp(t.max[2], key):
+                return get_values(ind)
             values = _operate(ind, key, is_search, True, False, True)
             values += _operate(ind, key, is_search, False, False, True)
             return values
@@ -171,11 +173,13 @@ def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal
             else:
                 left, _, _ = t.min
                 right = key
-            return _operate_range(t, [left, right], is_search, is_current)
+            values = _operate_range(t, [left, right], is_search, is_current)
         else:
-            return _operate_range(t, key, is_search, is_current)
+            values = _operate_range(t, key, is_search, is_current)
     else:
-        return _operate_single(t, key, is_search)
+        values = _operate_single(t, key, is_search)
+        buffer.save_index(t, ind)
+        return values
 
 
 def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
@@ -188,7 +192,8 @@ def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_eq
     :param is_range: are we searching in range?
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=True, is_greater=is_greater, is_current=is_current, is_range=is_range, is_not_equal=is_not_equal)
+    return _operate(ind, key, is_search=True, is_greater=is_greater, is_current=is_current, is_range=is_range,
+                    is_not_equal=is_not_equal)
 
 
 def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
@@ -200,7 +205,40 @@ def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_eq
     :param key: the key/keys to be searched (single or range)
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=False, is_greater=None, is_current=None, is_range=is_range, is_not_equal=is_not_equal)
+    return _operate(ind, key, is_search=False, is_greater=None, is_current=None, is_range=is_range,
+                    is_not_equal=is_not_equal)
+
+
+def get_values(ind):
+    t = buffer.get_index(ind)
+    _, _, node_a = t.min
+    _, _, node_z = t.max
+    values = []
+    if node_a == node_z:
+        for pos in range(len(node_a.values)):
+            values += node_a.values[pos]
+    else:
+        count = 0
+        # handle node_a
+        for pos in range(0, len(node_a.values)):
+            values += node_a.values[pos]
+            count += 1
+        # handle nodes between node_a and node_z (not including)
+        node = node_a
+        # if node_a is already node_z, don't do anything
+        while node != node_z:
+            # delete everything in between onw by one
+            for pos in range(0, len(node.values)):
+                values += node.values[pos]
+                count += 1
+            # go to another node
+            node = node.right
+        # handle node_a
+        for pos in range(0, len(node_z.values)):
+            values += node_z.values[pos]
+            count += 1
+
+    return values
 
 
 def update_values(ind, values):
