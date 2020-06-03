@@ -68,8 +68,8 @@ class command:
             elif inst[0] == 'delete':  # 删除数据
                 if inst[1] == 'from':
                     _command = self.delete_from_table(inst)
-            elif inst[0] == 'exit':  # 执行文件
-                _command = self.exit(inst)
+            elif inst[0] == 'file':  # 执行文件
+                _command = self.read_file(inst)
             else:
                 self.error_tp = error.ivld_cmd
                 return
@@ -78,9 +78,10 @@ class command:
             self.error_tp = error.syn
             return
 
-    def exit(self, inst):
+    def read_file(self, inst):
         result = {}
-        result['type'] = 'exit'
+        result['type'] = 'file'
+        result["file_name"] = inst[1]
         return result
 
     def create_table(self, inst):

@@ -3,6 +3,7 @@ import interpreter
 import index
 import file_manager
 import record_manager
+from time import perf_counter
 from minisqlclass import *
 
 catalog_manager = None
@@ -136,9 +137,14 @@ def create_index(new_idex):
     print(new_idex.index_id, list)
     index.create_index(new_idex.index_id, list)
 
+def read_file(file_name):
+    with open(file_name, "r") as f:
+        command_prompt(file_file=f)
+
 
 def execute(command_dict):
     print(command_dict)
+    start_time = perf_counter()
     if command_dict == None:
         print(parser.error_type)
         return
@@ -161,16 +167,22 @@ def execute(command_dict):
         drop_index(command_dict['index_name'])
     elif command_dict['type'] == 'create_index':
         create_index(command_dict['new_index'])
+    elif command_dict["type"] == "read_file":
+        read_file(command_dict["file_name"])
     else:
         print('Error: unknown command ')
-    print()
+    end_time = perf_counter()
+    print("{:.3f}s elapsed.".format(end_time - start_time))
 
 
-def command_prompt():
+def command_prompt(file_file=None):
     while True:
         command = ""
         while ';' not in command:
-            thi_command = input('>> ').strip()
+            if file_file is None:
+                thi_command = input('>> ').strip()
+            else:
+                thi_command = file_file.readline().strip()
             temp = thi_command.split('#', 1)
             thi_command = temp[0]
             command += thi_command
