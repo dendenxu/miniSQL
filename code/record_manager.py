@@ -54,8 +54,6 @@ def search_record(fname, conditionList):    # 内部接口
 # indList == 空列表 时，表示index没找到东西
 # indList == 0 时，表示未通过index查找
 def search_record_with_Index(fname, indList, conditionList):    # 内部接口  for delete and select
-    if conditionList == []:
-        return 0
     findInd = search_record(fname, conditionList)
     if findInd == 0 or (indList!=0 and len(indList)==0):
         return 0
@@ -65,7 +63,7 @@ def search_record_with_Index(fname, indList, conditionList):    # 内部接口  
             for k in i:
                 for j in findInd:
                     if k == j:
-                        finalInd.append(i)
+                        finalInd.append(k)
     else:
         finalInd = findInd
     if len(finalInd) == 0:
