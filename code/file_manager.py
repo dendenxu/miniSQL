@@ -81,23 +81,3 @@ def get_catalog_file():
     f = open(r'.\catalog\meta.txt', 'rb+')
     tmpcat = pickle.load(f)
     return tmpcat
-
-# 在关闭文件时
-def save_freeList(freeList):
-    f = open(r'.\data\deletedata.txt', 'w')
-    tmpstr = str(freeList)
-    f.write(tmpstr)
-    f.close()
-
-# 在打开文件时  
-# 调用 freeList = get_freeList()
-def get_freeList():
-    f = open(r'.\data\deletedata.txt', 'r')
-    tmpstr = f.readline()
-    freelist = {}
-    if not line:
-        return freelist
-    freelist = eval(tmpstr)
-    return freelist
-    
-    

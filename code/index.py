@@ -7,7 +7,6 @@ def _check_range(t, keys):
     """
     check whether range is OK
     raise exceptions if not OK
-
     :param t: the t to check
     :param keys: the key(s) whose range is to be checked
     :raise TreeException: empty tree
