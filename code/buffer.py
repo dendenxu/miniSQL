@@ -10,4 +10,4 @@ def save_index(tree, Ind):
 
 
 def delete_index(Ind):
-    pass
+    file_manager.delete_index_file(Ind)

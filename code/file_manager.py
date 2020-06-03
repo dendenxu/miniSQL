@@ -54,6 +54,10 @@ def clear_data_file(fname):
     f.close()
 
 
+def delete_index_file(Ind):
+    os.remove(r".\index\{}.txt".format(Ind))
+
+
 def save_index_file(Ind, tree):
     f = open(r'.\index\{}.txt'.format(Ind), 'wb')
     dill.dump(tree, f)
