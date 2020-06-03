@@ -161,7 +161,7 @@ def _operate(ind, key, is_search, is_greater, is_current, is_range, is_not_equal
     if is_range:
         # TODO: clean up buffer operations in _operate_range function
         if is_not_equal:
-            if t.cmp(key, t.min[0]) or t.cmp(t.max[2], key):
+            if t.cmp(key, t.min[0]) or t.cmp(t.max[0], key):
                 return get_values(ind)
             values = _operate(ind, key, is_search, True, False, True)
             values += _operate(ind, key, is_search, False, False, True)
