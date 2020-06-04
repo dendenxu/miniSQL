@@ -159,7 +159,14 @@ def insert(table_name, values):
                 conditionlist = []
                 condition = Condition_2(catalog_manager.get_attribute_cnt(table_name, attr2), 0, values[attr2])
                 conditionlist.append(condition)
-                temp = record_manager.select_record_with_Index(table_name, 0, conditionlist)
+                # fixme: record manager should throw proper exception on empty file or empty table
+                # I'm currently adding a small stub
+                try:
+                    temp = record_manager.select_record_with_Index(table_name, 0, conditionlist)
+                except Exception as e:
+                    # fixme: this will print the exception, reminding us to fix this
+                    print(e)
+                    temp = []
                 if len(temp) != 0:
                     print("Unique value has already exists\n")
                     return

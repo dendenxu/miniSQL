@@ -1,6 +1,7 @@
 import file_manager
 from minisqlclass import *
 
+
 class CatalogManager:
     def __init__(self, table=[], index=[]):
         self.table = table[:]
@@ -8,6 +9,7 @@ class CatalogManager:
         self.tableNum = int(len(table))
         self.indexNum = len(index)
         self.indexcnt = 0
+
     '''
     check_table(name)返回T/F
     check_index(table_name,attribute_name)返回index_index
@@ -20,27 +22,28 @@ class CatalogManager:
     add_index(table_name,attribute_name,index_index)
     drop_index(table_name,attribute_name)返回index_index
     '''
-    def check_table(self,name):
+
+    def check_table(self, name):
         for i in self.table:
-            if i.name==name:
+            if i.name == name:
                 return 1
         return 0
 
-    def check_index(self,table_name,attribute_name):
+    def check_index(self, table_name, attribute_name):
         for i in self.index:
-            if i.table_name==table_name and i.attribute_name==attribute_name:
+            if i.table_name == table_name and i.attribute_name == attribute_name:
                 return 1
         return 0
 
-    def check_unique(self,table_name,attribute_name):
+    def check_unique(self, table_name, attribute_name):
         for i in self.table:
             if i.name == table_name:  # find the table
                 for j in i.attributeList:
-                    if j.isUnique== True and j.name==attribute_name:  # find the primary key
+                    if j.isUnique == True and j.name == attribute_name:  # find the primary key
                         return 1
         return 0
 
-    def check_attribute(self,table_name,attribute_name):
+    def check_attribute(self, table_name, attribute_name):
         for i in self.index:
             if i.table_name == table_name and i.attribute_name == attribute_name:
                 return i.index_name
@@ -55,23 +58,23 @@ class CatalogManager:
                         ret.append(j.name)
         return ret
 
-    def get_index(self,table_name):
-        ret=[]
+    def get_index(self, table_name):
+        ret = []
         for i in self.index:
-            if i.table_name==table_name:
+            if i.table_name == table_name:
                 ret.append(i)
         return ret
 
-    def create_table(self, table,index):  # create a new table
+    def create_table(self, table, index):  # create a new table
         self.tableNum += 1
         self.table.append(table)
         self.create_index(index)
-        #缺少了更改metadata和文件这部分
+        # 缺少了更改metadata和文件这部分
 
     def create_index(self, index):  # create a new index
         self.indexNum += 1
         self.index.append(index)
-        #是否需要对文件进行操作？
+        # 是否需要对文件进行操作？
 
     def drop_table(self, table_name):  # drop a table
         for i in range(len(self.table)):
@@ -90,9 +93,9 @@ class CatalogManager:
                 self.index.remove(i)
                 self.indexNum -= 1
 
-    def check_index_name(self,index_name):
+    def check_index_name(self, index_name):
         for i in self.index:
-            if i.index_name==index_name:
+            if i.index_name == index_name:
                 return 1
         return 0
 
@@ -117,7 +120,7 @@ class CatalogManager:
     def get_index_info(self, index_name):  # get the table and attribute of an index
         for i in self.index:
             if i.index_name == index_name:
-                return [i.table_name, i.attribute_name,i.index_id]
+                return [i.table_name, i.attribute_name, i.index_id]
 
     def get_length(self, table_name):
         for i in self.table:
@@ -137,16 +140,16 @@ class CatalogManager:
             if i.name == attr_name:
                 return i.type
 
-    def get_index_id(self,table_name,attribute_name):
+    def get_index_id(self, table_name, attribute_name):
         for i in self.index:
-            if i.table_name==table_name and i.attribute_name==attribute_name:
+            if i.table_name == table_name and i.attribute_name == attribute_name:
                 return i.index_id
         return 0
 
-    def get_attribute_cnt(self,table_name,attr_name):
+    def get_attribute_cnt(self, table_name, attr_name):
         search_table = [i for i in self.table if i.name == table_name]
-        cnt=0
+        cnt = 0
         for i in search_table[0].attributeList:
             if i.name == attr_name:
                 return cnt
-            cnt=cnt+1
+            cnt = cnt + 1
