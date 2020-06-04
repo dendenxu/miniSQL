@@ -5,6 +5,7 @@ import file_manager
 import record_manager
 from minisqlclass import *
 from time import perf_counter
+import re
 
 catalog_manager = None
 start_time = None
@@ -244,6 +245,37 @@ def read_file(file_name):
     except:
         print("File not exist")
 
+def show_tables():
+    tabls=catalog_manager.get_all_table()
+    print(tabls)
+
+def show_table(table_name):
+    print("create table",table_name,"(")
+    attr=catalog_manager.get_attribute(table_name)
+    for attribute in attr:
+        #[i.name, i.type, i.length]
+        if attribute[1]=='char':
+            print(attribute[0],attribute[1],"(",attribute[2],"),")
+        else:
+            print(attribute[0],attribute[1],",")
+    pri=catalog_manager.get_primary(table_name)
+    print("primary key(",pri,")")
+    print(");")
+
+def show_index(table_name):
+    ind=catalog_manager.get_index(table_name)
+    for idx in ind:
+        if idx.index_name=="":
+            idx.index_name=idx.table_name+"_"+idx.attribute_name
+        print("index name:",idx.index_name,"\t index attribute name:",idx.attribute_name,"\t index id:",idx.index_id)
+
+def show_attribute(table_name):
+    attr = catalog_manager.get_attribute(table_name)
+    for attribute in attr:
+        if attribute[1] == 'char':
+            print(attribute[0], attribute[1], "(", attribute[2], ")")
+        else:
+            print(attribute[0], attribute[1])
 
 def execute(command_dict):
     # print(command_dict)
@@ -276,6 +308,14 @@ def execute(command_dict):
         delete_all(command_dict['table_name'])
     elif command_dict["type"] == "select data all":
         select_all(command_dict["table_name"])
+    elif command_dict["type"] == "show tables":
+        show_tables()
+    elif command_dict["type"] == "show table":
+        show_table(command_dict['table name'])
+    elif command_dict["type"] == "show index":
+        show_index(command_dict['table name'])
+    elif command_dict["type"] == "show attribute":
+        show_attribute(command_dict['table name'])
     else:
         print('Error: unknown command ')
     end_time = perf_counter()
@@ -295,7 +335,7 @@ def command_prompt(file_file=None):
                     print("One file done.")
                     return
             thi_command = thi_command.strip()
-            temp = thi_command.split('#', 1)
+            temp = re.split("[#-]",thi_command)
             thi_command = temp[0]
             command += thi_command
         if command == '':
@@ -304,7 +344,7 @@ def command_prompt(file_file=None):
             sql_exit()
             return
         else:
-            print(command)
+            # print(command)
             # print(type(command))
             try:
                 execute(parser.translate(command))

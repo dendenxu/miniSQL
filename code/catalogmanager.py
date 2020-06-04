@@ -154,3 +154,9 @@ class CatalogManager:
             if i.name == attr_name:
                 return cnt
             cnt = cnt + 1
+
+    def get_all_table(self):
+        ret=[]
+        for i in self.table:
+            ret.append(i.name)
+        return ret

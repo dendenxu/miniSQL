@@ -37,7 +37,7 @@ class Table:
 class Index:
     def __init__(self, tableName="", indexName="", attrName="", id=-1):
         self.table_name = tableName
-        self.index_name = indexName  # 还没决定index_name是等于index manager中的index序号还是create index语句中的indexname
+        self.index_name = indexName
         self.index_id = id
         self.attribute_name = attrName
 

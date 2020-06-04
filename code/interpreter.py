@@ -62,6 +62,8 @@ class command:
                     _command = self.delete_from_table(inst)
             elif inst[0] == 'execfile':  # 执行文件
                 _command = self.read_file(inst)
+            elif inst[0] == 'show':
+                _command = self.show_command(inst)
             else:
                 self.error_tp = error.ivld_cmd
                 return
@@ -74,6 +76,41 @@ class command:
     def read_file(self, inst):
         result = {'type': 'read_file', "file_name": inst[1]}
         return result
+
+    def show_command(self,inst):
+        if(len(inst)<2):
+            self.error_tp=error.syn
+            return
+        if inst[1]=='tables':
+            result={'type':"show tables"}
+            return result
+        if inst[1]=='create':
+            if len(inst)<4 or inst[2]!='table':
+                self.error_tp=error.syn
+                return
+            if self.catalog.check_table(inst[3])!=1:
+                self.error_tp=error.not_exist_t.format(inst[3])
+                return
+            result={'type':"show table","table name":inst[3]}
+            return result
+        if inst[1]=='index':
+            if len(inst)<4 or inst[2]!="from":
+                self.error_tp = error.syn
+                return
+            if self.catalog.check_table(inst[3])!=1:
+                self.error_tp=error.not_exist_t.format(inst[3])
+                return
+            result={'type':"show index","table name":inst[3]}
+            return result
+        if inst[1]=='columns':
+            if len(inst)<4 or inst[2]!="from":
+                self.error_tp = error.syn
+                return
+            if self.catalog.check_table(inst[3])!=1:
+                self.error_tp=error.not_exist_t.format(inst[3])
+                return
+            result={'type':"show attribute","table name":inst[3]}
+            return result
 
     def create_table(self, inst):
         result = {'type': 'create_table'}
