@@ -83,7 +83,7 @@ def _operate_single(t, key, is_search):
         if is_search:
             return node.values[pos]
         else:
-            t.delete(None, node, pos, bias)
+            t.delete(key, node, pos, bias)
             # buffer.save_index(t)
     else:
         raise KeyException("Cannot find key {} in tree {}".format(key, id(t)), (key, t))
@@ -205,7 +205,7 @@ def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_eq
     :param key: the key/keys to be searched (single or range)
     :return: currently nothing is returned
     """
-    return _operate(ind, key, is_search=False, is_greater=None, is_current=None, is_range=is_range,
+    return _operate(ind, key, is_search=False, is_greater=is_greater, is_current=is_current, is_range=is_range,
                     is_not_equal=is_not_equal)
 
 
