@@ -240,6 +240,13 @@ class command:
         result = {}
         attrib = []
         result['type'] = "select data not use index"
+        if len(inst) == 4:
+            result['type'] = "select data all"
+            result['table_name'] = inst[3]
+            if self.catalog.check_table(result['table_name']) != 1:
+                self.error_tp = error.not_exist_t.format(result['table_name'])
+                return
+            return result
         if len(inst) < 4:
             self.error_tp = error.syn
             return
@@ -375,6 +382,13 @@ class command:
 
     def delete_from_table(self, inst):
         result = {'type': "delete data"}
+        if len(inst) == 3:
+            result['type']="delete data all"
+            result['table_name']=inst[2]
+            if self.catalog.check_table(result['table_name']) != 1:
+                self.error_tp = error.not_exist_t.format(result['table_name'])
+                return
+            return result
         if len(inst) < 5:
             self.error_tp = error.syn
             return

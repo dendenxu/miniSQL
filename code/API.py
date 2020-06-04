@@ -36,10 +36,24 @@ def create_table(dict):
 def drop_table(table_name):
     ind = catalog_manager.get_index(table_name)
     for i in ind:
-        index.drop_indedx(i.index_id)
+        index.drop_index(i.index_id)
     record_manager.delete_table(table_name)
+    catalog_manager.drop_table(table_name)
     # print('done')
 
+def delete_all(table_name):
+    ind=catalog_manager.get_index(table_name)
+    for i in ind:
+        index.drop_index(i.index_id)
+        index.create_index(i.index_id,[])
+    record_manager.delete_table(table_name)
+    record_manager.create_table(table_name)
+
+def select_all(table_name):
+    try:
+        print(record_manager.select_record_with_Index(table_name, 0, []));
+    except:
+        print("Empty table")
 
 def select(table_name, conditions):
     # print("meow")
@@ -63,39 +77,43 @@ def select(table_name, conditions):
 
 def select_index(table_name, not_index_conditions, index_conditions):
     templist = []
-    for index_condition in index_conditions:
-        index_id = catalog_manager.get_index_id(table_name, index_condition.attribute_name)
-        if index_condition.op == '=':
-            temp = index.search(index_id, index_condition.operand, is_range=False, is_not_equal=False)
-        elif index_condition.op == '<':
-            temp = index.search(index_id, index_condition.operand, is_greater=False, is_current=False, is_range=True, is_not_equal=False)
-        elif index_condition.op == '>':
-            temp = index.search(index_id, index_condition.operand, is_greater=True, is_current=False, is_range=True, is_not_equal=False)
-        elif index_condition.op == '<>':
-            temp = index.search(index_id, index_condition.operand, is_range=True, is_not_equal=True)
-        elif index_condition.op == '<=':
-            temp = index.search(index_id, index_condition.operand, is_greater=False, is_current=True, is_range=True, is_not_equal=False)
-        elif index_condition.op == '>=':
-            temp = index.search(index_id, index_condition.operand, is_greater=True, is_current=True, is_range=True, is_not_equal=False)
-        if(type(temp) == int):
-            templist.append([temp])
-        else:
-            templist.append(temp)
-    conditionlist = []
-    for condi in not_index_conditions:
-        cond = Condition_2()
-        cond.value = condi.operand
-        cond.attribute = catalog_manager.get_attribute_cnt(table_name, condi.attribute_name)
-        if condi.op == '=':
-            cond.type = 0
-        elif condi.op == '<':
-            cond.type = 1
-        elif condi.op == '>':
-            cond.type = 2
-        else:
-            cond.type = 3
-        conditionlist.append(cond)
-    print(record_manager.select_record_with_Index(table_name, templist, conditionlist))
+    try:
+        for index_condition in index_conditions:
+            index_id = catalog_manager.get_index_id(table_name, index_condition.attribute_name)
+            if index_condition.op == '=':
+                temp = index.search(index_id, index_condition.operand, is_range=False, is_not_equal=False)
+            elif index_condition.op == '<':
+                temp = index.search(index_id, index_condition.operand, is_greater=False, is_current=False, is_range=True, is_not_equal=False)
+            elif index_condition.op == '>':
+                temp = index.search(index_id, index_condition.operand, is_greater=True, is_current=False, is_range=True, is_not_equal=False)
+            elif index_condition.op == '<>':
+                temp = index.search(index_id, index_condition.operand, is_range=True, is_not_equal=True)
+            elif index_condition.op == '<=':
+                temp = index.search(index_id, index_condition.operand, is_greater=False, is_current=True, is_range=True, is_not_equal=False)
+            elif index_condition.op == '>=':
+                temp = index.search(index_id, index_condition.operand, is_greater=True, is_current=True, is_range=True, is_not_equal=False)
+            if(type(temp) == int):
+                templist.append([temp])
+            else:
+                templist.append(temp)
+    except Exception as e:
+        print(e)
+    else:
+        conditionlist = []
+        for condi in not_index_conditions:
+            cond = Condition_2()
+            cond.value = condi.operand
+            cond.attribute = catalog_manager.get_attribute_cnt(table_name, condi.attribute_name)
+            if condi.op == '=':
+                cond.type = 0
+            elif condi.op == '<':
+                cond.type = 1
+            elif condi.op == '>':
+                cond.type = 2
+            else:
+                cond.type = 3
+            conditionlist.append(cond)
+        print(record_manager.select_record_with_Index(table_name, templist, conditionlist))
 
 
 def delete(table_name, conditions):
@@ -103,29 +121,36 @@ def delete(table_name, conditions):
     if if_index:
         index_id = catalog_manager.get_index_id(table_name, conditions.attribute_name)
         if conditions.op == '=':
-            print(index_id,conditions.operand)
-            temp = index.delete(index_id, conditions.operand, is_range=False, is_not_equal=False)
+            temp = index.search(index_id, conditions.operand, is_range=False, is_not_equal=False)
+            index.delete(index_id, conditions.operand, is_range=False, is_not_equal=False)
         elif conditions.op == '<':
-            temp = index.delete(index_id, conditions.operand, is_greater=False, is_current=False, is_range=True, is_not_equal=False)
+            temp = index.search(index_id, conditions.operand, is_greater=False, is_current=False, is_range=True,is_not_equal=False)
+            index.delete(index_id, conditions.operand, is_greater=False, is_current=False, is_range=True, is_not_equal=False)
         elif conditions.op == '>':
-            temp = index.delete(index_id, conditions.operand, is_greater=True, is_current=False, is_range=True, is_not_equal=False)
+            temp = index.search(index_id, conditions.operand, is_greater=True, is_current=False, is_range=True,is_not_equal=False)
+            index.delete(index_id, conditions.operand, is_greater=True, is_current=False, is_range=True, is_not_equal=False)
         elif conditions.op == '<>':
-            temp = index.delete(index_id, conditions.operand, is_range=True, is_not_equal=True)
+            temp = index.search(index_id, conditions.operand, is_range=True, is_not_equal=True)
+            index.delete(index_id, conditions.operand, is_range=True, is_not_equal=True)
         elif conditions.op == '<=':
-            temp = index.delete(index_id, conditions.operand, is_greater=False, is_current=True, is_range=True, is_not_equal=False)
+            temp = index.search(index_id, conditions.operand, is_greater=False, is_current=True, is_range=True,is_not_equal=False)
+            index.delete(index_id, conditions.operand, is_greater=False, is_current=True, is_range=True, is_not_equal=False)
         elif conditions.op == '>=':
-            temp = index.delete(index_id, conditions.operand, is_greater=True, is_current=True, is_range=True, is_not_equal=False)
+            temp = index.search(index_id, conditions.operand, is_greater=True, is_current=True, is_range=True,is_not_equal=False)
+            index.delete(index_id, conditions.operand, is_greater=True, is_current=True, is_range=True, is_not_equal=False)
         if (type(temp) == int):
-            ret=record_manager.delete_record_with_Index(table_name,[[temp]],[])
+            ret=record_manager.select_record_with_Index(table_name,[[temp]],[])
+            record_manager.delete_record_with_Index(table_name,[[temp]],[])
         else:
-            ret=record_manager.delete_record_with_Index(table_name, [temp], [])
-
+            ret=record_manager.select_record_with_Index(table_name, [temp], [])
+            record_manager.delete_record_with_Index(table_name, [temp], [])
         attr = catalog_manager.get_attribute(table_name)
         for i in attr:
             attr1 = i[0]
-            if catalog_manager.check_index(table_name, attr1) == 1:
+            if catalog_manager.check_index(table_name, attr1) == 1 and attr1!=conditions.attribute_name:
                 index_id=catalog_manager.get_index_id(table_name,attr1)
-                index.delete(index_id)
+                for infomation in ret:
+                    index.delete(index_id,infomation[catalog_manager.get_attribute_cnt(table_name,attr1)],is_range=False, is_not_equal=False)
     else:
         conditionlist = []
         cond = Condition_2()
@@ -140,7 +165,16 @@ def delete(table_name, conditions):
         else:
             cond.type = 3
         conditionlist.append(cond)
-        temp = record_manager.delete_record_with_Index(table_name, 0, conditionlist)
+        ret = record_manager.select_record_with_Index(table_name, 0, conditionlist)
+        record_manager.delete_record_with_Index(table_name, 0, conditionlist)
+        attr = catalog_manager.get_attribute(table_name)
+        for i in attr:
+            attr1 = i[0]
+            if catalog_manager.check_index(table_name, attr1) == 1:
+                index_id = catalog_manager.get_index_id(table_name, attr1)
+                for infomation in ret:
+                    index.delete(index_id, infomation[catalog_manager.get_attribute_cnt(table_name, attr1)],
+                                 is_range=False, is_not_equal=False)
 
 
 def insert(table_name, values):
@@ -180,7 +214,6 @@ def insert(table_name, values):
     for attr_ in attr:
         attr_name = attr_[0]
         if catalog_manager.check_index(table_name, attr_name) == 1:
-            print(catalog_manager.get_index_id(table_name, attr_name),values[attr_name],line)
             index.insert(catalog_manager.get_index_id(table_name, attr_name), values[attr_name], line)
 
 
@@ -205,8 +238,11 @@ def create_index(new_idex):
 
 
 def read_file(file_name):
-    with open(file_name, "r") as f:
-        command_prompt(file_file=f)
+    try:
+        with open(file_name, "r") as f:
+            command_prompt(file_file=f)
+    except:
+        print("File not exist")
 
 
 def execute(command_dict):
@@ -220,7 +256,7 @@ def execute(command_dict):
         return
     if command_dict['type'] == 'create_table':
         create_table(command_dict)
-    elif command_dict['type'] == 'drop_table':
+    elif command_dict['type'] == 'delete table':
         drop_table(command_dict['table_name'])
     elif command_dict['type'] == 'select data not use index':
         select(command_dict['table_name'], command_dict['not_index_condt'])
@@ -236,6 +272,10 @@ def execute(command_dict):
         create_index(command_dict['new_index'])
     elif command_dict["type"] == "read_file":
         read_file(command_dict["file_name"])
+    elif command_dict['type'] == "delete data all":
+        delete_all(command_dict['table_name'])
+    elif command_dict["type"] == "select data all":
+        select_all(command_dict["table_name"])
     else:
         print('Error: unknown command ')
     end_time = perf_counter()
