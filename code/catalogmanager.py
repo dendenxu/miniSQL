@@ -44,9 +44,12 @@ class CatalogManager:
         return 0
 
     def check_attribute(self, table_name, attribute_name):
-        for i in self.index:
-            if i.table_name == table_name and i.attribute_name == attribute_name:
-                return i.index_name
+        ret = []
+        for i in self.table:
+            if i.name == table_name:
+                for j in i.attributeList:
+                    if j.name == attribute_name:
+                        return 1
         return 0
 
     def get_unique(self, table_name):
@@ -69,12 +72,10 @@ class CatalogManager:
         self.tableNum += 1
         self.table.append(table)
         self.create_index(index)
-        # 缺少了更改metadata和文件这部分
 
     def create_index(self, index):  # create a new index
         self.indexNum += 1
         self.index.append(index)
-        # 是否需要对文件进行操作？
 
     def drop_table(self, table_name):  # drop a table
         for i in range(len(self.table)):

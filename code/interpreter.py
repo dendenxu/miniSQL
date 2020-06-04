@@ -2,6 +2,7 @@ import re
 import sys
 import copy
 import catalogmanager
+import string
 from minisqlclass import *
 
 error = error_type()
@@ -24,6 +25,23 @@ class command:
             for i in inst_temp:
                 if i != "":
                     i = i.replace(" ", "").replace("\t", "").strip()
+                    ops=['<=',">=","<",">","="]
+                    flag=0
+                    for op in ops:
+                        if i.find(op)!=-1:
+                            print(i.find(op))
+                            temp=i[0:i.find(op)]
+                            print(temp)
+                            if temp!='':
+                                inst.append(temp)
+                            inst.append(op)
+                            temp=i[i.find(op)+len(op):]
+                            if temp!='':
+                                inst.append(temp)
+                            flag=1
+                            break
+                    if flag==1:
+                        continue
                     inst.append(i)
             # print(inst)
             if inst[0] == 'create':
@@ -382,7 +400,7 @@ class command:
                 self.error_tp = error.syn
                 return
             if self.catalog.check_attribute(result['table_name'], inst[i]) != 1:
-                self.error_tp = error.not_exist_a.format(j, result['table_name'])
+                self.error_tp = error.not_exist_a.format(inst[i], result['table_name'])
                 return
             nowtype = self.catalog.get_attribute_type(result['table_name'], inst[i])
             if nowtype == 'float':
