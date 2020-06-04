@@ -25,13 +25,11 @@ class command:
             for i in inst_temp:
                 if i != "":
                     i = i.replace(" ", "").replace("\t", "").strip()
-                    ops=['<=',">=","<",">","="]
+                    ops=['<=',">=","<>","<",">","="]
                     flag=0
                     for op in ops:
                         if i.find(op)!=-1:
-                            print(i.find(op))
                             temp=i[0:i.find(op)]
-                            print(temp)
                             if temp!='':
                                 inst.append(temp)
                             inst.append(op)

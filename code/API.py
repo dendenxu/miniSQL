@@ -103,6 +103,7 @@ def delete(table_name, conditions):
     if if_index:
         index_id = catalog_manager.get_index_id(table_name, conditions.attribute_name)
         if conditions.op == '=':
+            print(index_id,conditions.operand)
             temp = index.delete(index_id, conditions.operand, is_range=False, is_not_equal=False)
         elif conditions.op == '<':
             temp = index.delete(index_id, conditions.operand, is_greater=False, is_current=False, is_range=True, is_not_equal=False)
@@ -115,9 +116,16 @@ def delete(table_name, conditions):
         elif conditions.op == '>=':
             temp = index.delete(index_id, conditions.operand, is_greater=True, is_current=True, is_range=True, is_not_equal=False)
         if (type(temp) == int):
-            print(record_manager.select_record_with_Index(table_name, [[temp]], []))
+            ret=record_manager.delete_record_with_Index(table_name,[[temp]],[])
         else:
-            print(record_manager.select_record_with_Index(table_name, [temp], []))
+            ret=record_manager.delete_record_with_Index(table_name, [temp], [])
+
+        attr = catalog_manager.get_attribute(table_name)
+        for i in attr:
+            attr1 = i[0]
+            if catalog_manager.check_index(table_name, attr1) == 1:
+                index_id=catalog_manager.get_index_id(table_name,attr1)
+                index.delete(index_id)
     else:
         conditionlist = []
         cond = Condition_2()
@@ -132,9 +140,7 @@ def delete(table_name, conditions):
         else:
             cond.type = 3
         conditionlist.append(cond)
-        # print(conditionlist[0].value,conditionlist[0].attribute,conditionlist[0].type)
         temp = record_manager.delete_record_with_Index(table_name, 0, conditionlist)
-        # print(temp)
 
 
 def insert(table_name, values):
@@ -174,6 +180,7 @@ def insert(table_name, values):
     for attr_ in attr:
         attr_name = attr_[0]
         if catalog_manager.check_index(table_name, attr_name) == 1:
+            print(catalog_manager.get_index_id(table_name, attr_name),values[attr_name],line)
             index.insert(catalog_manager.get_index_id(table_name, attr_name), values[attr_name], line)
 
 
