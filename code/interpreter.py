@@ -50,19 +50,17 @@ class command:
                 self.error_tp = error.ivld_cmd
                 return
             return _command
-        except:
+        except Exception as e:
+            print(e)
             self.error_tp = error.syn
             return
 
     def read_file(self, inst):
-        result = {}
-        result['type'] = 'read_file'
-        result["file_name"] = inst[1]
+        result = {'type': 'read_file', "file_name": inst[1]}
         return result
 
     def create_table(self, inst):
-        result = {}
-        result['type'] = 'create_table'
+        result = {'type': 'create_table'}
         new_table = Table()
         attrib = []
         if len(inst) < 3:
@@ -70,8 +68,8 @@ class command:
             return
         result['table_name'] = inst[2]
         new_table.name = inst[2]
-        if self.catalog.check_table(new_table.name)==1:
-            self.error_tp = error.exist_t
+        if self.catalog.check_table(new_table.name) == 1:
+            self.error_tp = error.exist_t.format(new_table.name)
             return
         i = 3
         have_pri = False
@@ -133,7 +131,7 @@ class command:
                         j.isPrimary = True
                         j.isUnique = True
                         flag_pri_in_att = True
-                if flag_pri_in_att == False:
+                if not flag_pri_in_att:
                     self.error_tp = error.invalid_prim_k
                     have_pri = False
                     return
@@ -155,8 +153,7 @@ class command:
         return result
 
     def create_index(self, inst):
-        result = {}
-        result['type'] = 'create_index'
+        result = {'type': 'create_index'}
         new_index = Index()
         i = 2
         if i >= len(inst):
@@ -180,21 +177,21 @@ class command:
             self.error_tp = error.syn
             return
         new_index.table_name = inst[i]
-        if (self.catalog.check_table(new_index.table_name) != 1):
-            self.error_tp = error.not_exist_t
+        if self.catalog.check_table(new_index.table_name) != 1:
+            self.error_tp = error.not_exist_t.format(new_index.table_name)
             return
         result['table_name'] = new_index.table_name
         i = 5
         if i >= len(inst):
             self.error_tp = error.syn
             return
-        new_index.attribute_name =inst[i]
         new_index.attribute_name = inst[i]
-        if self.catalog.check_index(new_index.table_name, new_index.attribute_name)==1:
-            self.error_tp = error.exist_i
+        new_index.attribute_name = inst[i]
+        if self.catalog.check_index(new_index.table_name, new_index.attribute_name) == 1:
+            self.error_tp = error.exist_i.format(new_index.attribute_name, new_index.table_name)
             return
-        if (self.catalog.check_unique(new_index.table_name,new_index.attribute_name )!=1):
-            self.error_tp = error.no_unq_a
+        if self.catalog.check_unique(new_index.table_name, new_index.attribute_name) != 1:
+            self.error_tp = error.no_unq_a.format(new_index.attribute_name, new_index.table_name)
             return
         new_index.index_id = self.catalog.indexcnt
         self.catalog.indexcnt = self.catalog.indexcnt + 1
@@ -202,25 +199,23 @@ class command:
         return result
 
     def delete_table(self, inst):
-        result = {}
-        result['type'] = "delete table"
+        result = {'type': "delete table"}
         if len(inst) < 3:
-            self.error_tp = error.ept_t
+            self.error_tp = error.ept_t.format(inst[2])
             return
-        if (self.catalog.check_table(inst[2]) != 1):
-            self.error_tp = error.not_exist_t
+        if self.catalog.check_table(inst[2]) != 1:
+            self.error_tp = error.not_exist_t.format(inst[2])
             return
         result['table_name'] = inst[2]
         return result
 
     def delete_index(self, inst):
-        result = {}
-        result['type'] = "delete index"
+        result = {'type': "delete index"}
         if len(inst) < 3:
             self.error_tp = error.syn
             return
-        if (self.catalog.check_index_name(inst[2])!=1):
-            self.error_tp = error.not_exist_i
+        if self.catalog.check_index_name(inst[2]) != 1:
+            self.error_tp = error.not_exist_i.format(inst[2])
             return
         result['index_name'] = inst[2]
         return result
@@ -247,11 +242,11 @@ class command:
 
         i += 1
         result['table_name'] = inst[i]
-        if (self.catalog.check_table(result['table_name']) != 1):
-            self.error_tp = error.not_exist_t
+        if self.catalog.check_table(result['table_name']) != 1:
+            self.error_tp = error.not_exist_t.format(result['table_name'])
             return
 
-        if len(attrib) == 0 and flag_select_all == False:
+        if len(attrib) == 0 and not flag_select_all:
             self.error_tp = error.syn
             return
         i += 1
@@ -268,7 +263,7 @@ class command:
         else:
             for j in attrib:
                 if j not in attributes_name:
-                    self.error_tp = error.not_exist_a
+                    self.error_tp = error.not_exist_a.format(j, result['table_name'])
                     return
         result['attributes'] = attrib
         index_condition = []
@@ -283,8 +278,8 @@ class command:
                 i = i + 1
                 while i < len(inst):
                     attrib_name = inst[i]
-                    if self.catalog.check_attribute(result['table_name'],attrib_name)!=1:
-                        self.error_tp = error.not_exist_a
+                    if self.catalog.check_attribute(result['table_name'], attrib_name) != 1:
+                        self.error_tp = error.not_exist_a.format(attrib_name, result['table_name'])
                         return
                     if i + 1 >= len(inst):
                         self.error_tp = error.syn
@@ -318,15 +313,14 @@ class command:
         return result
 
     def insert_into_table(self, inst):
-        result = {}
-        result['type'] = "insert data"
+        result = {'type': "insert data"}
         if len(inst) < 5:
             self.error_tp = error.syn
             return
         i = 2
         result['table_name'] = inst[2]
         if self.catalog.check_table(result['table_name']) != 1:
-            self.error_tp = error.not_exist_t
+            self.error_tp = error.not_exist_t.format(result['table_name'])
             return
         attrib = self.catalog.get_attribute(result['table_name'])
         types = self.catalog.get_type_length(result['table_name'])
@@ -364,8 +358,7 @@ class command:
         return result
 
     def delete_from_table(self, inst):
-        result = {}
-        result['type'] = "delete data"
+        result = {'type': "delete data"}
         if len(inst) < 5:
             self.error_tp = error.syn
             return
@@ -374,8 +367,8 @@ class command:
         if len(inst) == 3:
             result['condt'] = []
             return result
-        if (self.catalog.check_table(result['table_name']) != 1):
-            self.error_tp = error.not_exist_t
+        if self.catalog.check_table(result['table_name']) != 1:
+            self.error_tp = error.not_exist_t.format(result['table_name'])
             return
         i = i + 1
         if inst[i] != 'where':
@@ -389,7 +382,7 @@ class command:
                 self.error_tp = error.syn
                 return
             if self.catalog.check_attribute(result['table_name'], inst[i]) != 1:
-                self.error_tp = error.not_exist_a
+                self.error_tp = error.not_exist_a.format(j, result['table_name'])
                 return
             nowtype = self.catalog.get_attribute_type(result['table_name'], inst[i])
             if nowtype == 'float':
