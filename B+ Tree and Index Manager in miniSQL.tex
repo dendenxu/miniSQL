@@ -648,6 +648,28 @@ class TreeException(MiniSQLException):
 \end{algorithm}
 
 \chapter{遇到的问题及解决方法}
+\section{更改目录结构后\texttt{Python}无法正确引用其他\texttt{.py}文件}
+\subsection{问题描述}
+为了使文件结构更为整洁方便，我们尝试了使用模块来封装各个\texttt{.py}文件与直接调用\texttt{.py}文件或相对引用等多种方式，最初的文件目录如列表\ref{lst:file_tree_0}所示：
+\begin{longlisting}
+    \begin{minted}{shell}
+        ./
+        ├── code
+        ├── bplus.py
+        ├── buffer.py
+        ├── exceptions.py
+        ├── ...
+        ├── index.py
+        └── readme.md
+    \end{minted}
+    \label{lst:file_tree_0}
+    \caption{可能的文件目录}
+\end{longlisting}
+这种方式下\texttt{Python}脚本只需要使用普通的\texttt{import}或\texttt{from ... import ...}即可正确引用相关文件。
+\par
+且得益于IDE特性\footnote{\texttt{Visual Studio Code}，\texttt{PyCharm}等}
+
+
 \chapter{总结}
 
 \newpage
