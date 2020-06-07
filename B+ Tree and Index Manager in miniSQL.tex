@@ -650,27 +650,163 @@ class TreeException(MiniSQLException):
 \chapter{遇到的问题及解决方法}
 \section{更改目录结构后\texttt{Python}无法正确引用其他\texttt{.py}文件}
 \subsection{问题描述}
-为了使文件结构更为整洁方便，我们尝试了使用模块来封装各个\texttt{.py}文件与直接调用\texttt{.py}文件或相对引用等多种方式，最初的文件目录如列表\ref{lst:file_tree_0}所示：
+为了使文件结构更为整洁方便，我们尝试了使用模块来封装各个\texttt{.py}文件与直接调用\texttt{.py}文件或相对引用等多种方式，最初的文件目录如列表\ref{lst:filetree0}所示：
 \begin{longlisting}
     \begin{minted}{shell}
         ./
-        ├── code
-        ├── bplus.py
-        ├── buffer.py
-        ├── exceptions.py
-        ├── ...
-        ├── index.py
-        └── readme.md
+        |-- some_data_folders
+        |-- some_data_files
+        |-- bplus.py
+        |-- buffer.py
+        |-- exceptions.py
+        |-- ...
+        |-- index.py
+        |-- readme.md
     \end{minted}
-    \label{lst:file_tree_0}
+    % guess you'll be needing more than the correct content but also the correct sequence to achieve proper label
     \caption{可能的文件目录}
+    \label{lst:filetree0}
 \end{longlisting}
 这种方式下\texttt{Python}脚本只需要使用普通的\texttt{import}或\texttt{from ... import ...}即可正确引用相关文件。
 \par
-且得益于IDE特性\footnote{\texttt{Visual Studio Code}，\texttt{PyCharm}等}
+且得益于IDE特性\footnote{\texttt{Visual Studio Code}，\texttt{PyCharm}等}，当前目录会被自动设置为程序的运行时的根目录，也就意味着程序中对于文件的操作也可正常进行（即使\texttt{Python}脚本与数据文件不在同一文件夹下）。因此我们采用了如列表\ref{lst:filetree1}所示的文件组织结构。
 
+\begin{longlisting}
+    \begin{minted}{shell}
+        ./
+        |-- some_data_folders
+        |-- some_data_files
+        |-- code/
+            |-- bplus.py
+            |-- buffer.py
+            |-- exceptions.py
+            |-- ...
+            |-- index.py
+        |-- readme.md
+        |-- license
+    \end{minted}
+    % guess you'll be needing more than the correct content but also the correct sequence to achieve proper label
+    \caption{可能的文件目录}
+    \label{lst:filetree1}
+\end{longlisting}
+
+这种文件组织结构下，code中的代码可以正常访问根目录中的数据文件和数据文件夹，但无法引用同在\texttt{code}文件夹下的其他\texttt{.py}文件。如列表\ref{lst:cannot_import}所示。
+\begin{longlisting}
+    \begin{minted}{shell}
+In [1]: import blablabla
+---------------------------------------------------------------------------
+ModuleNotFoundError                       Traceback (most recent call last)
+<ipython-input-1-7e2f26fa0a8b> in <module>
+----> 1 import blablabla
+
+ModuleNotFoundError: No module named 'blablabla'
+
+In [2]:
+    \end{minted}
+    % guess you'll be needing more than the correct content but also the correct sequence to achieve proper label
+    \caption{无法引用同一文件下的模块}
+    \label{lst:cannot_import}
+\end{longlisting}
+
+\subsection{解决方法}
+我们注意到如下事实：
+\begin{itemize}
+    \item \texttt{Python}根据\texttt{PYTHONPATH}设定的目录进行文件，模块等的搜索。
+    \item PyCharm会将当前工作目录的根目录当作\texttt{Python}工作目录之一，即添加到\texttt{PYTHONPATH}中，如列表\ref{lst:path_append}所示。
+    \item Visual Studio Code会根据当前工作目录下的环境配置文件（\texttt{.env}）而进行目录与模块搜索。
+\end{itemize}
+
+因此，在PyCharm中我们可以通过修改目录等级，对目录做标记来手动使IDE搜索相关内容，如图\ref{fig:folder_label}所示。在Visual Studio Code中我们可以通过编辑如列表\ref{lst:manual_append}所示的环境配置文件来添加相关内容。
+\par
+由于上述两种方法都是在间接修改运行时的\texttt{PYTHONPATH}，在只用Python执行相关脚本时我们可以通过如列表\ref{lst:path_append}所示的语句执行等价操作。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{figure/path_append.jpg}
+    \caption{PyCharm中的文件夹标记}
+    \label{fig:folder_label}
+\end{figure}
+
+
+\begin{longlisting}
+    \begin{minted}{python}
+D:\condaenvs\Anaconda\python.exe "C:\Program Files\JetBrains\PyCharm 2019.3.4\plugins\python\helpers\pydev\pydevconsole.py" --mode=client --port=4243
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend(['D:\\Documents\\Materials\\DENDEN\\PROJ\\Database\\miniSQL', 'D:\\Documents\\Materials\\DENDEN\\PROJ\\Database\\miniSQL\\code', 'D:/Documents/Materials/DENDEN/PROJ/Database/miniSQL']) 
+    \end{minted}
+    \caption{PyCharm中的搜索目录自动修改}
+    \label{lst:path_append}
+\end{longlisting}
+
+
+\begin{longlisting}
+    \begin{minted}{python}
+PYTHONPATH=code
+    \end{minted}
+    \caption{PyCharm中的搜索目录自动修改}
+    \label{lst:manual_append}
+\end{longlisting}
+
+\section{使用\texttt{pickle}储存二进制形式的索引超出递归层数限制}
+树是一个递归实现的数据结构，\texttt{Python}提供的二进制储存包\texttt{pickle}需要通过递归调用树中的内容来储存其所包含的信息。因此树高过大会导致超出\texttt{Python}递归限制，如图\ref{fig:recursion_limit}所示。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{figure/recursion_limit.png}
+    \caption{超出递归限制}
+    \label{fig:recursion_limit}
+\end{figure}
+
+当然我们可以使用列表\ref{lst:change_recursion_limit}所示的代码修改\texttt{Python}对于递归深度的限制。但修改词限制之后系统堆栈同样有机会溢出，在这种情况下系统会直接杀死我们的\texttt{Python}进程，如图\ref{fig:kill_process}所示。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{figure/system_termination.png}
+    \caption{系统杀死当前进程}
+    \label{fig:kill_process}
+\end{figure}
+
+\begin{longlisting}
+    \begin{minted}{python}
+import sys
+sys.setrecursionlimit(10000000)
+    \end{minted}
+    \caption{修改递归限制}
+    \label{lst:change_recursion_limit}
+\end{longlisting}
+最终，我们通过修改B+树的最大子树数量避免了这一问题，在调用\texttt{create\_index}方法时直接设置M值，如列表\ref{lst:change_m}所示。
+
+\begin{longlisting}
+    \begin{minted}{python}
+def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
+    """
+    :param ind: the id of the index to be saved to file
+    :param data_list: the data, as list, to create index on
+    :param cmp: the comparator of the index, defaults to operator<
+    :param is_primary: whether we're dealing with primary key, using sorted list
+    :return: index of the newly created table
+    """
+    if is_primary:
+        t = SortedList()
+    else:
+        # TODO: dynamically compute the M value of the B+ tree
+        # TODO: what if you're out of memory
+        t = Tree(m=50, cmp=cmp)
+    for index, data in enumerate(data_list):
+        # TODO: what happens if you get an error from the B+ tree
+        t.insert(data, index)  # insert data as key and line number as value
+    \end{minted}
+    \caption{调整M值，降低深度}
+    \label{lst:change_m}
+\end{longlisting}
 
 \chapter{总结}
+在本实验中，我们从零实现了B+树模块。借助\texttt{Python}的动态类型语言特性，我们的B+树可以有效对各种\texttt{Python}支持的数据类型进行操作。通过进行单元测试，我们在miniSQL项目整体进行的前期就保证了B+树模块的正确性，为后续调试整合过程带来了极大方便。
+\par
+接着，我们实现了B+树中的索引相关操作。并封装成了一个易用的模块，使得API可以方便的调用。
+\par
+此次实验中我们深刻感受到了小组合作与提前定义接口的重要性，并且在B+树具体实现过程中，我们对单元测试的作用有了更进一步的了解。
+
 
 \newpage
 \part{附录}
@@ -681,7 +817,7 @@ class TreeException(MiniSQLException):
 
 \chapter{插图，表格与列表}
 \listoffigures
-\listoftables
+% \listoftables
 \listoflistings
 \end{appendices}
 \end{document}
