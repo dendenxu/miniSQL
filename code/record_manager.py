@@ -1,8 +1,5 @@
-import file_manager
-import pandas as pd
-
-freeList = {}
-
+import buffer
+from buffer import *
 
 class Condition:
     def __init__(self, attribute=-1, type=-1, value=None):
@@ -12,162 +9,83 @@ class Condition:
 
 
 def insert_record(fname, record):  # 外部接口
-    posR = 'end'
-    for k in freeList.keys():
-        if k == fname:
-            posR = freeList[k][0]
-            freeList[k].remove(posR)
-    newposR = file_manager.save_record(fname, record, posR)
+    newposR = data_buffer.insert_record(fname, record)      # data_buffer 是一个DataBuffer类的对象
     return newposR
-
-
-def dataframe_to_list(df):  # 内部接口
-    return df.values.tolist()
-
-
-def list_to_dataframe(li):  # 内部接口
-    return pd.DataFrame(li)
-
-
-# 当没有index时的查询方法
-def searchDF(df, conditionList):  # 内部接口
-    for cond in conditionList:
-        if len(df) == 0:
-            return False
-        if cond.type == 0:
-            df = df[df[cond.attribute] == cond.value]
-        elif cond.type == 1:
-            df = df[df[cond.attribute] < cond.value]
-        elif cond.type == 2:
-            df = df[df[cond.attribute] > cond.value]
-        elif cond.type == 3:
-            df = df[df[cond.attribute] != cond.value]
-        elif cond.type == 4:
-            df = df[df[cond.attribute] <= cond.value]
-        elif cond.type == 5:
-            df = df[df[cond.attribute] >= cond.value]
-    return df
-
-
-def search_record(fname, conditionList):  # 内部接口
-    origdf = file_manager.get_data(fname)
-    nowdf = origdf
-    nowdf = searchDF(nowdf, conditionList)
-    if type(nowdf) == bool:
-        return 0  # 没有找到符合条件的记录
-    findInd = nowdf.index.tolist()
-    return findInd
 
 
 # indList == [] 时，表示index没找到东西
 # indList == 0  时，表示未通过index查找
-def search_record_with_Index(fname, indList, conditionList):  # 内部接口  for delete and select
-    findInd = search_record(fname, conditionList)
-    if findInd == 0 or (indList != 0 and len(indList) == 0):
-        return 0
-    finalInd = []
-    if (indList != 0):
-        settmp = set(indList[0])
-        for i in range(1,len(indList)):
-            settmp = settmp.intersection(indList[i])
-        settmp = settmp.intersection(findInd)
-        finalInd = list(settmp)
-    else:
-        finalInd = findInd
-    if len(finalInd) == 0:
-        return 0
-
-    return finalInd  # for delete and select
-
+def check_fit(fname, pos, record, indList, conditionList):           # 内部接口
+    flag = True
+    #if (type(indList) != int and pos not in indList) or (pos in freeList[fname]):
+    #    return False        # 无需删除或没有选中 返回后处理
+    if pos in buffer.freeList[fname]:
+        return False
+    if type(indList) != int:
+        for tmplist in indList:
+            if pos not in tmplist:
+                return False
+    for cond in conditionList:
+        if cond.type == 0:      # ==
+            if record[cond.attribute] != cond.value:
+                flag = False
+                break
+        elif cond.type == 1:    # <
+            if record[cond.attribute] >= cond.value:
+                flag = False
+                break
+        elif cond.type == 2:    # >
+            if record[cond.attribute] <= cond.value:
+                flag = False
+                break
+        elif cond.type == 3:    # <>
+            if record[cond.attribute] == cond.value:
+                flag = False
+                break
+        elif cond.type == 4:    # <=
+            if record[cond.attribute] > cond.value:
+                flag = False
+                break
+        elif cond.type == 5:    # >=
+            if record[cond.attribute] < cond.value:
+                flag = False
+                break
+    return flag
 
 def delete_record_with_Index(fname, indList, conditionList):  # 外部接口 for delete
-    delInd = search_record_with_Index(fname, indList, conditionList)
-    if type(delInd) == int:
-        return 0
-    if fname not in freeList:
-        freeList[fname] = []
-        compareList = []
-    else:
-        compareList = freeList[fname]
-    finaldelInd = []
-    for i in delInd:
-        if i not in compareList:
-            finaldelInd.append(i)
-    if len(finaldelInd) == 0:
-        return 0  # 不用删除
-    for posi in finaldelInd:
-        freeList[fname].append(posi)
-    return finaldelInd
-
+    if indList != 0 and len(indList) == 0:
+        return 0        # 没有要删除的元素（算执行成功还是算Exception？）
+    blockList = data_buffer.get_blocks(fname)
+    delInd = []
+    for blocki in blockList:
+        for i in range(len(blocki.content)):
+            posR = blocki.position*256 + i
+            flag = check_fit(fname, posR, blocki.content[i], indList, conditionList)
+            if flag == True:
+                delInd.append(posR)
+                buffer.freeList[fname].append(posR)
+    return delInd
 
 def select_record_with_Index(fname, indList, conditionList):  # 外部接口 for select
-    compareList = []
-    if fname in freeList:
-        compareList = freeList[fname]
-    if indList != 0:
-        if len(indList) == 0:
-            return 0
-        else:
-            tmpset = set(indList[0])
-            for i in range(1,len(indList)):
-                tmpset = tmpset.intersection(indList[i])
-            tmplist = list(tmpset)
-            df = file_manager.get_data(fname)
-            selList = dataframe_to_list(df)
-            finalselList = []
-            for i in tmplist:
-                if i in compareList:
-                    continue
-                templist = selList[i]
-                flag = True
-                for cond in conditionList:
-                    if cond.type == 0:      # ==
-                        if templist[cond.attribute] != cond.value:
-                            flag = False
-                            break
-                    elif cond.type == 1:    # <
-                        if templist[cond.attribute] >= cond.value:
-                            flag = False
-                            break
-                    elif cond.type == 2:    # >
-                        if templist[cond.attribute] <= cond.value:
-                            flag = False
-                            break
-                    elif cond.type == 3:    # <>
-                        if templist[cond.attribute] == cond.value:
-                            flag = False
-                            break
-                    elif cond.type == 4:    # <=
-                        if templist[cond.attribute] > cond.value:
-                            flag = False
-                            break
-                    elif cond.type == 5:    # >=
-                        if templist[cond.attribute] < cond.value:
-                            flag = False
-                            break
-                if flag:
-                    finalselList.append(templist)
-    else:
-        selInd = search_record(fname, conditionList)
-        if type(selInd) == int:
-            return 0
-
-        df = file_manager.get_data(fname)
-        selList = dataframe_to_list(df)
-        finalselList = []
-        for i in selInd:
-            if i not in compareList:
-                finalselList.append(selList[i])
-    return finalselList
+    if indList != 0 and len(indList) == 0:
+        return 0        # 没有被选中的元素（算执行成功还是算Exception？）
+    blockList = data_buffer.get_blocks(fname)
+    selList = []
+    for blocki in blockList:
+        for i in range(len(blocki.content)):
+            posR = blocki.position*256 + i
+            flag = check_fit(fname, posR, blocki.content[i], indList, conditionList)
+            if flag == True:
+                #print(blocki.content[i])
+                selList.append(blocki.content[i])
+    return selList
 
 
 def create_table(fname):
-    file_manager.create_data_file(fname)
-
+    data_buffer.create_table(fname)
 
 def delete_table(fname):
-    file_manager.delete_data_file(fname)
-
+    data_buffer.delete_table(fname)
 
 def clear_table(fname):  # delete from fname
-    file_manager.clear_data_file(fname)
+    data_buffer.clear_table(fname)

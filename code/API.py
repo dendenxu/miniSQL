@@ -3,6 +3,7 @@ import interpreter
 import index
 import file_manager
 import record_manager
+import buffer
 from minisqlclass import *
 from time import perf_counter
 import re
@@ -18,10 +19,14 @@ def init():
     if catalog_manager is None:
         catalog_manager = catalogmanager.CatalogManager()
     parser = interpreter.command(catalog_manager)
+    file_manager.initialize_file()
+    buffer.initialize_buffer()
+    
 
 
 def sql_exit():
     file_manager.save_catalog_file(catalog_manager)
+    buffer.quit_buffer()
     print('Bye\n')
 
 
@@ -47,8 +52,8 @@ def delete_all(table_name):
     for i in ind:
         index.drop_index(i.index_id)
         index.create_index(i.index_id,[])
-    record_manager.delete_table(table_name)
-    record_manager.create_table(table_name)
+    record_manager.clear_table(table_name)
+    #record_manager.create_table(table_name)
 
 def select_all(table_name):
     try:
