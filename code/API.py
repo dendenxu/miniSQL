@@ -280,13 +280,16 @@ def create_index(new_idex,if_str_command):
 
 def read_file(file_name,if_str_command):
     try:
-        with open(file_name, "r") as f:
-            command_prompt(file_file=f)
+        with open(file_name, "r",encoding='UTF-8') as f:
+            if(if_str_command):
+                return command_prompt(file_file=f,str_command=' ')
+            else:
+                command_prompt(file_file=f)
     except:
         if(if_str_command):
-            ret="File not exist\n"
+            ret="File not exist.\n"
             return ret
-        else:print("File not exist")
+        else:print("File not exist.")
 
 def show_tables(if_str_command):
     tabls=catalog_manager.get_all_table()
@@ -408,7 +411,7 @@ def command_prompt(file_file=None,str_command=None):
     while True:
         command = ""
         while ';' not in command:
-            if str_command != None:
+            if str_command != None and str_command!=" ":
                 thi_command=str_command
             elif file_file is None:
                 thi_command = input('>> ')
@@ -418,12 +421,15 @@ def command_prompt(file_file=None,str_command=None):
                     # EOF reached
                     if(str_command==None):
                         print("One file done.")
-                    else: ret=ret+"One file done."+"\n"
-                    return ret
+                    else:
+                        ret=ret+"One file done."+"\n"
+                        # print(ret)
+                        return ret
             thi_command = thi_command.strip()
             temp = re.split("[#-]",thi_command)
             thi_command = temp[0]
             command += thi_command
+        # print(command)
         if command == '':
             if(str_command==None):
                 continue
@@ -437,30 +443,51 @@ def command_prompt(file_file=None,str_command=None):
                 if(str_command==None):
                    thi=False
                 else: thi=True
+                # print(command)
                 sstr=execute(parser.translate(command),thi)
+                # print(sstr)
             except:
                 sql_exit()
                 raise
             else:
                 if(len(sstr)!=0):
                     ret=ret+sstr+"\n"
-                if(thi):
+                if(thi and file_file==None):
                    return ret
 
 def str_main(input):
     sql=input.split(";")
     ret=""
     for i in range(len(sql)-1):
+        # print(i)
         if(len(sql[i])==0):
             continue
-        while((sql[i][0]=='\n' or sql[i][0]=='\r' or sql[i][0]==' ')):
-            if(len(sql[i])>1):
-                sql[i]=sql[i][1:]
-            else:
-                continue
-        try:
+        if i!=0:
             if(len(sql[i])==0):
                 continue
+            while ((sql[i][0] == '\n' or sql[i][0] == '\r' or sql[i][0] == ' ')):
+                if (len(sql[i]) > 1):
+                    sql[i] = sql[i][1:]
+                else:
+                    break
+            if len(sql[i]) <= 1:
+                continue
+            if(sql[i][0]=='#' or sql[i][0]=='-'):
+                while sql[i][0]!='\n' and sql[i][0]!='\r':
+                    if (len(sql[i]) > 1):
+                        sql[i] = sql[i][1:]
+                    else:
+                        break
+                if len(sql[i])<=1:
+                    continue
+            while((sql[i][0]=='\n' or sql[i][0]=='\r' or sql[i][0]==' ')):
+                if(len(sql[i])>1):
+                    sql[i]=sql[i][1:]
+                else:
+                    break
+            if len(sql[i])<=1:
+                continue
+        try:
             sql[i]=sql[i]+";"
             sstr=command_prompt(str_command=sql[i])
         except:
@@ -477,18 +504,18 @@ def main():
 if __name__ == '__main__':
 # that's a test
     init()
-    sstr="""insert into student2 values(1080100001,'name1',99);\n
-insert into student2 values(1080100002,'name2',52.5);\n
-insert into student2 values(1080100003,'name3',98.5);\n
-insert into student2 values(1080100004,'name4',91.5);\n
-insert into student2 values(1080100005,'name5',72.5);\n
-insert into student2 values(1080100006,'name6',89.5);\n
-insert into student2 values(1080100007,'name7',63);\n
-insert into student2 values(1080100008,'name8',73.5);\n
-insert into student2 values(1080100009,'name9',79.5);\n
-insert into student2 values(1080100010,'name10',70.5);\n
-insert into student2 values(1080100011,'name11',89.5);\n
-insert into student2 values(1080100012,'name12',62);\n"""
-#     sstr="delete from student2;\n"
+#     sstr="""insert into student2 values(1080100001,'name1',99);\n
+# insert into student2 values(1080100002,'name2',52.5);\n
+# insert into student2 values(1080100003,'name3',98.5);\n
+# insert into student2 values(1080100004,'name4',91.5);\n
+# insert into student2 values(1080100005,'name5',72.5);\n
+# insert into student2 values(1080100006,'name6',89.5);\n
+# insert into student2 values(1080100007,'name7',63);\n
+# insert into student2 values(1080100008,'name8',73.5);\n
+# insert into student2 values(1080100009,'name9',79.5);\n
+# insert into student2 values(1080100010,'name10',70.5);\n
+# insert into student2 values(1080100011,'name11',89.5);\n
+# insert into student2 values(1080100012,'name12',62);\n"""
+    sstr="""execfile test.txt;"""
     print("str_out",str_main(sstr))
     sql_exit(True)
