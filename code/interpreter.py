@@ -19,7 +19,6 @@ class command:
     def translate(self, instruction):
         try:
             _command = {}
-            # print(instruction)
             inst_temp = re.split('[,; ()]', instruction)
             inst = []
             for i in inst_temp:
@@ -41,7 +40,6 @@ class command:
                     if flag==1:
                         continue
                     inst.append(i)
-            # print(inst)
             if inst[0] == 'create':
                 if inst[1] == 'table':  # create table
                     _command = self.create_table(inst)

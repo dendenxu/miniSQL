@@ -21,16 +21,17 @@ def init():
     parser = interpreter.command(catalog_manager)
     file_manager.initialize_file()
     buffer.initialize_buffer()
-    
 
-
-def sql_exit():
+def sql_exit(if_str_command):
     file_manager.save_catalog_file(catalog_manager)
     buffer.quit_buffer()
+    if(if_str_command):
+        ret="Bye\n"
+        return ret
     print('Bye\n')
 
 
-def create_table(dict):
+def create_table(dict,if_str_command):
     prim_index = dict['pri_index']
     index.create_index(prim_index.index_id, [])
     table = dict['new_table']
@@ -39,7 +40,7 @@ def create_table(dict):
     # print('done')
 
 
-def drop_table(table_name):
+def drop_table(table_name,if_str_command):
     ind = catalog_manager.get_index(table_name)
     for i in ind:
         index.drop_index(i.index_id)
@@ -47,7 +48,7 @@ def drop_table(table_name):
     catalog_manager.drop_table(table_name)
     # print('done')
 
-def delete_all(table_name):
+def delete_all(table_name,if_str_command):
     ind=catalog_manager.get_index(table_name)
     for i in ind:
         index.drop_index(i.index_id)
@@ -55,13 +56,19 @@ def delete_all(table_name):
     record_manager.clear_table(table_name)
     #record_manager.create_table(table_name)
 
-def select_all(table_name):
+def select_all(table_name,if_str_command):
     try:
+        if(if_str_command):
+            ret=str(record_manager.select_record_with_Index(table_name, 0, []))+"\n"
+            return ret
         print(record_manager.select_record_with_Index(table_name, 0, []));
     except:
+        if(if_str_command):
+            ret="Empty table\n"
+            return ret
         print("Empty table")
 
-def select(table_name, conditions):
+def select(table_name, conditions,if_str_command):
     # print("meow")
     conditionlist = []
     for condi in conditions:
@@ -78,10 +85,13 @@ def select(table_name, conditions):
             cond.type = 3
         conditionlist.append(cond)
     # print(conditionlist[0].type,conditionlist[0].attribute,conditionlist[0].value)
+    if(if_str_command):
+        ret=str(record_manager.select_record_with_Index(table_name, 0, conditionlist))+"\n"
+        return ret
     print(record_manager.select_record_with_Index(table_name, 0, conditionlist))
 
 
-def select_index(table_name, not_index_conditions, index_conditions):
+def select_index(table_name, not_index_conditions, index_conditions,if_str_command):
     templist = []
     try:
         for index_condition in index_conditions:
@@ -103,6 +113,9 @@ def select_index(table_name, not_index_conditions, index_conditions):
             else:
                 templist.append(temp)
     except Exception as e:
+        if(if_str_command):
+            ret=str(e)+"\n"
+            return ret
         print(e)
     else:
         conditionlist = []
@@ -119,10 +132,20 @@ def select_index(table_name, not_index_conditions, index_conditions):
             else:
                 cond.type = 3
             conditionlist.append(cond)
+        if(if_str_command):
+            # ret=''
+            # l=record_manager.select_record_with_Index(table_name, templist, conditionlist)
+            # for i in l:
+            #     for j in i:
+            #         print(str(j))
+            #         ret=ret+str(j)+" "
+            #     ret=ret+"\n"
+            ret=str(record_manager.select_record_with_Index(table_name, templist, conditionlist))
+            return ret
         print(record_manager.select_record_with_Index(table_name, templist, conditionlist))
 
 
-def delete(table_name, conditions):
+def delete(table_name, conditions,if_str_command):
     if_index = catalog_manager.check_index(table_name, conditions.attribute_name)
     if if_index:
         index_id = catalog_manager.get_index_id(table_name, conditions.attribute_name)
@@ -183,7 +206,7 @@ def delete(table_name, conditions):
                                  is_range=False, is_not_equal=False)
 
 
-def insert(table_name, values):
+def insert(table_name, values,if_str_command):
     value = []
     attr = catalog_manager.get_attribute(table_name)
     for i in attr:
@@ -199,6 +222,9 @@ def insert(table_name, values):
                 except Exception:
                     temp = []
                 else:
+                    if(if_str_command):
+                        ret="Unique value has already exists\n"
+                        return ret
                     print("Unique value has already exists\n")
                     return
             else:
@@ -211,9 +237,15 @@ def insert(table_name, values):
                     temp = record_manager.select_record_with_Index(table_name, 0, conditionlist)
                 except Exception as e:
                     # fixme: this will print the exception, reminding us to fix this
+                    if(if_str_command):
+                        ret=str(e)+"\n"
+                        return ret
                     print(e)
                     temp = []
                 if len(temp) != 0:
+                    if(if_str_command):
+                        ret="Unique value has already exists\n"
+                        return ret
                     print("Unique value has already exists\n")
                     return
     line = record_manager.insert_record(table_name, value)
@@ -223,14 +255,17 @@ def insert(table_name, values):
             index.insert(catalog_manager.get_index_id(table_name, attr_name), values[attr_name], line)
 
 
-def drop_index(index_name):
+def drop_index(index_name,if_str_command):
     temp = catalog_manager.get_index_info(index_name)
     catalog_manager.drop_index(index_name)
     index.drop_index(temp[2])
 
 
-def create_index(new_idex):
+def create_index(new_idex,if_str_command):
     if catalog_manager.check_index(new_idex.table_name, new_idex.attribute_name) != 0:
+        if(if_str_command):
+            ret="Index already exists!\n"
+            return ret
         print("Index already exists!")
         return
     catalog_manager.create_index(new_idex)
@@ -243,120 +278,196 @@ def create_index(new_idex):
     index.create_index(new_idex.index_id, list)
 
 
-def read_file(file_name):
+def read_file(file_name,if_str_command):
     try:
         with open(file_name, "r") as f:
             command_prompt(file_file=f)
     except:
-        print("File not exist")
+        if(if_str_command):
+            ret="File not exist\n"
+            return ret
+        else:print("File not exist")
 
-def show_tables():
+def show_tables(if_str_command):
     tabls=catalog_manager.get_all_table()
-    print(tabls)
+    if(if_str_command):
+        return str(tabls)
+    else :print(tabls)
 
-def show_table(table_name):
-    print("create table",table_name,"(")
+def show_table(table_name,if_str_command):
+    ret=""
+    if(if_str_command):
+        ret=ret+"create table "+str(table_name)+" (\n"
+    else:print("create table",table_name,"(")
     attr=catalog_manager.get_attribute(table_name)
     for attribute in attr:
         #[i.name, i.type, i.length]
         if attribute[1]=='char':
-            print(attribute[0],attribute[1],"(",attribute[2],"),")
+            if(if_str_command):
+                ret=ret+str(attribute[0])+" "+str(attribute[1])+" ( "+str(attribute[2])+" ),\n"
+            else:print(attribute[0],attribute[1],"(",attribute[2],"),")
         else:
-            print(attribute[0],attribute[1],",")
+            if(if_str_command):
+                ret=ret+str(attribute[0])+" "+str(attribute[1])+" ,\n"
+            else:print(attribute[0],attribute[1],",")
     pri=catalog_manager.get_primary(table_name)
-    print("primary key(",pri,")")
-    print(");")
+    if(if_str_command):
+        ret=ret+"primary key("+str(pri)+")\n);\n"
+    else:
+        print("primary key(",pri,")")
+        print(");")
+    return ret
 
-def show_index(table_name):
+def show_index(table_name,if_str_command):
+    ret=""
     ind=catalog_manager.get_index(table_name)
     for idx in ind:
         if idx.index_name=="":
             idx.index_name=idx.table_name+"_"+idx.attribute_name
-        print("index name:",idx.index_name,"\t index attribute name:",idx.attribute_name,"\t index id:",idx.index_id)
+        if(if_str_command):
+            ret=ret+"index name:"+" "+str(idx.index_name)+" \t index attribute name:"+str(idx.attribute_name)+" \t index id:"+str(idx.index_id)
+        else:print("index name:",idx.index_name,"\t index attribute name:",idx.attribute_name,"\t index id:",idx.index_id)
+    return ret
 
-def show_attribute(table_name):
+def show_attribute(table_name,if_str_command):
     attr = catalog_manager.get_attribute(table_name)
+    ret=""
     for attribute in attr:
         if attribute[1] == 'char':
-            print(attribute[0], attribute[1], "(", attribute[2], ")")
+            if(if_str_command):
+                ret=ret+attribute[0]+" "+attribute[1]+" "+"(", attribute[2], ")"+'\n'
+            else:print(attribute[0], attribute[1], "(", attribute[2], ")")
         else:
-            print(attribute[0], attribute[1])
+            if (if_str_command):
+                ret = ret+attribute[0] + " " + attribute[1] + '\n'
+            else: print(attribute[0], attribute[1])
+    return ret
 
-def execute(command_dict):
-    # print(command_dict)
+def execute(command_dict,if_str_command=False):
+    ret=""
     start_time = perf_counter()
     if command_dict == None:
+        if(if_str_command):
+            ret=ret+parser.error_tp+"\n"
+            return ret
         print(parser.error_tp)
         return
     if len(command_dict) == 0:
+        if(if_str_command):
+            ret=ret+'ERROR: invalid command'+"\n"
+            return ret
         print('ERROR: invalid command')
         return
     if command_dict['type'] == 'create_table':
-        create_table(command_dict)
+        sstr=create_table(command_dict,if_str_command)
     elif command_dict['type'] == 'delete table':
-        drop_table(command_dict['table_name'])
+        sstr=drop_table(command_dict['table_name'],if_str_command)
     elif command_dict['type'] == 'select data not use index':
-        select(command_dict['table_name'], command_dict['not_index_condt'])
+        sstr=select(command_dict['table_name'], command_dict['not_index_condt'],if_str_command)
     elif command_dict['type'] == 'select data use index':
-        select_index(command_dict['table_name'], command_dict['not_index_condt'], command_dict['index_condt'])
+        sstr=select_index(command_dict['table_name'], command_dict['not_index_condt'], command_dict['index_condt'],if_str_command)
     elif command_dict['type'] == 'delete data':
-        delete(command_dict['table_name'], command_dict['condt'][0])
+        sstr=delete(command_dict['table_name'], command_dict['condt'][0],if_str_command)
     elif command_dict['type'] == 'insert data':
-        insert(command_dict['table_name'], command_dict['val'])
+        sstr=insert(command_dict['table_name'], command_dict['val'],if_str_command)
     elif command_dict['type'] == 'delete index':
-        drop_index(command_dict['index_name'])
+        sstr=drop_index(command_dict['index_name'],if_str_command)
     elif command_dict['type'] == 'create_index':
-        create_index(command_dict['new_index'])
+        sstr=create_index(command_dict['new_index'],if_str_command)
     elif command_dict["type"] == "read_file":
-        read_file(command_dict["file_name"])
+        sstr=read_file(command_dict["file_name"],if_str_command)
     elif command_dict['type'] == "delete data all":
-        delete_all(command_dict['table_name'])
+        sstr=delete_all(command_dict['table_name'],if_str_command)
     elif command_dict["type"] == "select data all":
-        select_all(command_dict["table_name"])
+        sstr=select_all(command_dict["table_name"],if_str_command)
     elif command_dict["type"] == "show tables":
-        show_tables()
+        sstr=show_tables(if_str_command)
     elif command_dict["type"] == "show table":
-        show_table(command_dict['table name'])
+        sstr=show_table(command_dict['table name'],if_str_command)
     elif command_dict["type"] == "show index":
-        show_index(command_dict['table name'])
+        sstr=show_index(command_dict['table name'],if_str_command)
     elif command_dict["type"] == "show attribute":
-        show_attribute(command_dict['table name'])
+        sstr=show_attribute(command_dict['table name'],if_str_command)
     else:
-        print('Error: unknown command ')
+        if(if_str_command):
+            sstr='Error: unknown command '
+        else:print('Error: unknown command ')
     end_time = perf_counter()
-    print("{:.3f}s elapsed.".format(end_time - start_time))
+    if(if_str_command):
+        if(sstr!=None and len(sstr)!=0):
+            ret=ret+sstr+"\n"
+        sstr="{:.3f}s elapsed.".format(end_time - start_time)
+        ret=ret+sstr+"\n"
+        return ret
+    else:
+        print("{:.3f}s elapsed.".format(end_time - start_time))
 
 
-def command_prompt(file_file=None):
+def command_prompt(file_file=None,str_command=None):
+    ret=""
     while True:
         command = ""
         while ';' not in command:
-            if file_file is None:
+            if str_command != None:
+                thi_command=str_command
+            elif file_file is None:
                 thi_command = input('>> ')
             else:
                 thi_command = file_file.readline()
                 if thi_command == "":
                     # EOF reached
-                    print("One file done.")
-                    return
+                    if(str_command==None):
+                        print("One file done.")
+                    else: ret=ret+"One file done."+"\n"
+                    return ret
             thi_command = thi_command.strip()
             temp = re.split("[#-]",thi_command)
             thi_command = temp[0]
             command += thi_command
         if command == '':
-            continue
+            if(str_command==None):
+                continue
+            else: return ret
         elif command == 'exit;':
             sql_exit()
-            return
+            ret=ret+"Bye"+"\n"
+            return ret
         else:
-            # print(command)
-            # print(type(command))
             try:
-                execute(parser.translate(command))
+                if(str_command==None):
+                   thi=False
+                else: thi=True
+                sstr=execute(parser.translate(command),thi)
             except:
                 sql_exit()
                 raise
+            else:
+                if(len(sstr)!=0):
+                    ret=ret+sstr+"\n"
+                if(thi):
+                   return ret
 
+def str_main(input):
+    sql=input.split(";")
+    ret=""
+    for i in range(len(sql)-1):
+        if(len(sql[i])==0):
+            continue
+        while((sql[i][0]=='\n' or sql[i][0]=='\r' or sql[i][0]==' ')):
+            if(len(sql[i])>1):
+                sql[i]=sql[i][1:]
+            else:
+                continue
+        try:
+            if(len(sql[i])==0):
+                continue
+            sql[i]=sql[i]+";"
+            sstr=command_prompt(str_command=sql[i])
+        except:
+            sstr="Something wrong...QAQ"
+        if(sstr!=None and len(sstr)!=0):
+            ret=ret+sstr+"\n"
+    return ret
 
 def main():
     init()
@@ -364,4 +475,20 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+# that's a test
+    init()
+    sstr="""insert into student2 values(1080100001,'name1',99);\n
+insert into student2 values(1080100002,'name2',52.5);\n
+insert into student2 values(1080100003,'name3',98.5);\n
+insert into student2 values(1080100004,'name4',91.5);\n
+insert into student2 values(1080100005,'name5',72.5);\n
+insert into student2 values(1080100006,'name6',89.5);\n
+insert into student2 values(1080100007,'name7',63);\n
+insert into student2 values(1080100008,'name8',73.5);\n
+insert into student2 values(1080100009,'name9',79.5);\n
+insert into student2 values(1080100010,'name10',70.5);\n
+insert into student2 values(1080100011,'name11',89.5);\n
+insert into student2 values(1080100012,'name12',62);\n"""
+#     sstr="delete from student2;\n"
+    print("str_out",str_main(sstr))
+    sql_exit(True)
