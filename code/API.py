@@ -6,6 +6,7 @@ import record_manager
 import buffer
 from minisqlclass import *
 from time import perf_counter
+from exceptions import *
 import re
 
 catalog_manager = None
@@ -491,8 +492,10 @@ def str_main(input):
         try:
             sql[i]=sql[i]+";"
             sstr=command_prompt(str_command=sql[i])
-        except:
-            sstr="Something wrong...QAQ"
+        except Exception as e:
+            # FIXME: bad practice
+            sstr = "Something wrong...QAQ"
+            sstr += e.__str__
         if(sstr!=None and len(sstr)!=0):
             ret=ret+sstr+"\n"
     return ret
