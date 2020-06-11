@@ -22,7 +22,7 @@ def init():
     file_manager.initialize_file()
     buffer.initialize_buffer()
 
-def sql_exit(if_str_command):
+def sql_exit(if_str_command=False):
     file_manager.save_catalog_file(catalog_manager)
     buffer.quit_buffer()
     if(if_str_command):
@@ -421,6 +421,7 @@ def command_prompt(file_file=None,str_command=None):
                     # EOF reached
                     if(str_command==None):
                         print("One file done.")
+                        return
                     else:
                         ret=ret+"One file done."+"\n"
                         # print(ret)
@@ -450,7 +451,7 @@ def command_prompt(file_file=None,str_command=None):
                 sql_exit()
                 raise
             else:
-                if(len(sstr)!=0):
+                if(sstr!=None and len(sstr)!=0):
                     ret=ret+sstr+"\n"
                 if(thi and file_file==None):
                    return ret
@@ -501,9 +502,9 @@ def main():
     command_prompt()
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 # that's a test
-    init()
+#     init()
 #     sstr="""insert into student2 values(1080100001,'name1',99);\n
 # insert into student2 values(1080100002,'name2',52.5);\n
 # insert into student2 values(1080100003,'name3',98.5);\n
@@ -516,6 +517,7 @@ if __name__ == '__main__':
 # insert into student2 values(1080100010,'name10',70.5);\n
 # insert into student2 values(1080100011,'name11',89.5);\n
 # insert into student2 values(1080100012,'name12',62);\n"""
-    sstr="""execfile test.txt;"""
-    print("str_out",str_main(sstr))
-    sql_exit(True)
+#     sstr="""show tables;"""
+#     print("str_out",str_main(sstr))
+#     sql_exit(True)
+#     command_prompt()
