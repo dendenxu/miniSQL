@@ -22,7 +22,8 @@ black = QColor("#282c34")
 purple = QColor("#d55fdd")
 font_name_ui = "Ubuntu"
 font_name_mono = "UbuntuMono Nerd Font"
-base_font_point_size = 14
+window_font_scale = 2
+base_font_point_size = 14*window_font_scale
 
 
 class OutputLexer(QsciLexerCustom):
@@ -149,7 +150,7 @@ class CustomMainWindow(QMainWindow):
         # --------------
 
         # 1. Define the geometry of the main window
-        init_geometry = (300, 300, 800, 400)
+        init_geometry = (300, 300, 800*window_font_scale, 400*window_font_scale)
 
         self.setGeometry(*init_geometry)
         self.setWindowTitle("miniSQL GUI")
