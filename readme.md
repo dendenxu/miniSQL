@@ -19,9 +19,9 @@
 ### Provides
 
 ```python
-
-def create_index(data_list, cmp=lambda x, y: x < y, is_primary=False):
+def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
     """
+    :param ind: the id of the index to be saved to file
     :param data_list: the data, as list, to create index on
     :param cmp: the comparator of the index, defaults to operator<
     :param is_primary: whether we're dealing with primary key, using sorted list
@@ -46,27 +46,41 @@ def insert(ind, key, value, is_replace=False):
     """
 
 
-def search(ind, key):
+def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
     """
     A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
     :param ind: the id of the index to be deleted on
     :param key: the key/keys to be deleted (single or range)
+    :param is_range: are we searching in range?
     :return: currently nothing is returned
     """
 
-def delete(ind, key):
+
+def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
     """
     A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
     :param ind: the id of the index to be searched on
     :param key: the key/keys to be searched (single or range)
     :return: currently nothing is returned
     """
 
+
+def get_values(ind):
+    """
+    get every value from the bplus tree for printing all information fast enough
+    :param ind: id of the index whose value is to be updated
+    """
+
+
 def update_values(ind, values):
     """
     updates information about an index
-    :param ind:
-    :param values:
+    :param ind: id of the index whose value is to be updated
+    :param values: the new values to be set to the index
     :return:
     """
 ```
