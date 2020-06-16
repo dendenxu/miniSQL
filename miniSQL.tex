@@ -43,7 +43,7 @@
     linkcolor=blue,
     filecolor=magenta,      
     urlcolor=cyan,
-    pdftitle={imageRestore},
+    pdftitle={miniSQL},
 }
 %-----------------------------------------------------------------------------------------
 % To list code elegantly and stuff
@@ -61,8 +61,9 @@
     linenos,
     fontsize=\small
 }
-
-
+% \usepackage{bold-extra}
+% \usepackage[T1]{fontenc}
+% \usepackage{libertine} % this is a temp solution, should consider on using other packages for font
 \makeatletter
 \newenvironment{breakablealgorithm}
   {% \begin{breakablealgorithm}
@@ -91,52 +92,82 @@
 %-----------------------------------------------------------------------------------------
 % To predefine title and stuff
 %-----------------------------------------------------------------------------------------
-\title{数据库系统实验报告\\
-  B+ Tree and Index Manager in \texttt{miniSQL} \\
-  \large \texttt{miniSQL}设计中的B+树和索引管理器}
-
-\author{
-教师：孙建伶\\
-姓名：徐震\\
-学号：3180105504\\
-邮箱：\href{3180105504@zju.edu.cn}{3180105504@zju.edu.cn}\\
-电话：18888916826
-}
-\date{\today}
-
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.75\textwidth]{figure/浙江大学.eps}\par\vspace{1cm}
+% 	{\scshape\LARGE Columbidae University \par}
+% 	\vspace{1cm}
+	{\scshape\LARGE 数据库系统实验报告\par}
+	\vspace{1.5cm}
+	{\huge\textsc{\textsc{miniSQL}}\textbf{小组实验报告}\par}
+	\vspace{2cm}
+	{\Large\itshape 徐\ \ 震 \textbf{3180105504} 18888916826\par}
+	{\Large\itshape 曾一欣 \textbf{3180105144} 13372553368\par}
+	{\Large\itshape 毛一恒 \textbf{3180105504} 18888916826\par}
+	\vfill
+	指导教师\par
+	\textit{孙建伶}
+
+	\vfill
+
+% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
+
+
 \newpage
 \tableofcontents
 \newpage
 \part{正文}
 \chapter{实验目的}
-\paragraph{\texttt{miniSQL}}
-设计并实现一个精简型单用户SQL引擎(DBMS)\texttt{miniSQL}，允许用户通过字符界面输入SQL 语句实现表的建立/删除；索引的建立/删除以及表记录的插入/删除/查找。
-\paragraph{索引管理器}
-我们负责设计的索引管理器模块主要负责数据库系统中的索引管理，提供基于B+树的索引实现并提高数据库查询/插入/删除效率。并通过提供易用接口与其他模块整合实现有效功能。
+\section{总体实验目的}
+\paragraph{\textsc{miniSQL}}
+设计并实现一个精简型单用户SQL引擎(DBMS)\textsc{miniSQL}，允许用户通过字符界面输入SQL 语句实现表的建立/删除；索引的建立/删除以及表记录的插入/删除/查找。
+
 \paragraph{设计目的}
-通过对\texttt{miniSQL}的设计与实现，提高学生的系统编程能力，加深对数据库系统原理的理解。
+通过对\textsc{miniSQL}的设计与实现，提高学生的系统编程能力，加深对数据库系统原理的理解。
 通过编程设计，加深对数据库系统的理解并深入了解B+树这一数据结构。
 以模块化方式构建大型计算机软件，提高架构抽象能力并重视模块化和解耦合在软件设计中的作用。
-\paragraph{功能实现}
-我们将实现如下的基本索引功能：
-\begin{itemize}
-    \item 对单属性索引提供完整支持。
-    \item 通过客制化比较函数可支持简单多属性索引。
-    \item 对于表的主键自动建立B+树索引/排序数组索引。
-    \item 对于声明为\texttt{unique}（唯一值）的属性可以通过SQL语句由用户指定建立/删除B+树索引。
-    \item 支持除B+树以外的数据结构索引（如排序数组索引），控制接口。
-    \item 基于\texttt{Exception}（异常）的错误信息传递路径。
-    \item 基于\texttt{Python}语言的多种数据类型索引支持。
-\end{itemize}
+
+\section{模块实验目的}
+\paragraph{索引管理器}
+我们负责设计的索引管理器模块主要负责数据库系统中的索引管理，提供基于B+树的索引实现并提高数据库查询/插入/删除效率。并通过提供易用接口与其他模块整合实现有效功能。
+
+\paragraph{缓存管理器}
+负责缓冲区的管理，主要功能有：
+1. 根据需要，读取指定的数据到系统缓冲区或将缓冲区中的数据写出到文件。
+2. 实现缓冲区的替换算法，当缓冲区满时选择合适的页进行替换。
+3. 记录缓冲区中各页的状态，如是否被修改过等。
+4. 提供缓冲区页的pin功能，及锁定缓冲区的页，不允许替换出去。
+
+\paragraph{记录管理器}
+负责管理记录表中数据的数据文件。主要功能为实现数据文件的创建与删除（由表的定义与删除引起）、记录的插入、删除与查找操作，并对外提供相应的接口。其中记录的查找操作要求能够支持不带条件的查找和带一个条件的查找（包括等值查找、不等值查找和区间查找）。数据文件由一个或多个数据块组成，块大小应与缓冲区块大小相同。一个块中包含一条至多条记录，为简单起见，只要求支持定长记录的存储，且不要求支持记录的跨块存储。
+
+\paragraph{目录管理器}
+负责管理数据库的所有模式信息，包括：
+1. 数据库中所有表的定义信息。
+2. 表中每个字段的定义信息。
+3. 数据库中所有索引的定义。
+
+\paragraph{接口管理器}
+接口管理器模块是整个系统的核心，其主要功能为提供执行SQL 语句的接口，解释器层调用。解释器 层解释生成的命令内部表示为输入，根据目录管理器提供的信息确定执行规则，并调用记录管理器去，索引管理器，目录管理器提供的相应接口进行执行，最后返回执行结果给解释器模块。
+
+\paragraph{命令行解释器}
+解释器模块直接与用户交互，主要实现以下功能：
+1. 程序流程控制，即“启动并初始化→‘接收命令、处理命令、显示命令结果’循环→退出”流程。
+2. 接收并解释用户输入的命令，生成命令的内部数据结构表示，同时检查命令的语法正确性和部分语义正确性，对正确
+的命令调用API 层提供的函数执行并显示执行结果，对不正确的命令显示错误信息。
+
+\paragraph{图形界面}
+我们通过实现图形界面以环节用户对于命令行界面的恐惧（纵使这个图形界面中用户还是要敲写SQL语句），通过\texttt{PyQt}等易用接口实现一个简单的带有语法高亮的编辑器界面，并用对用户友好的方式输入输出各种信息，并提供对于一般编辑器操作的支持（例如多种快捷键和其他功能）。
+
 \chapter{实验环境}
 \section{系统需求}
 \paragraph{主要开发语言}
 \begin{itemize}
-    \item Python 3.7.5
-    \item Python 3.7.6
+    \item \texttt{Python 3.7.*/3.8.*}
 \end{itemize}
 \paragraph{主要开发环境}
 \begin{itemize}
@@ -145,17 +176,22 @@
 \end{itemize}
 \paragraph{经过测试的系统环境}
 \begin{itemize}
-    \item Microsoft Windows [Version 10.0.18363.836]
-    \item Ubuntu WSL2
+    \item \textsc{Microsoft Windows [Version 10.0.18363.836]}
+    \item \textsc{Ubuntu WSL2}
+    \item \textsc{MacOS Catalina}
+\end{itemize}
+\paragraph{\texttt{Python}包要求}
+\begin{itemize}
+    \item \texttt{QScintilla, QDarkStyle, PyQt5}
 \end{itemize}
 
 \section{实验环境}
-\paragraph{实验系统环境} Microsoft Windows [Version 10.0.18363.836]
+\paragraph{实验系统环境} \textsc{Microsoft Windows [Version 10.0.18363.836]}
 \paragraph{实验处理器环境} Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz 12 Logical Processors
 \paragraph{实验内存环境} SODIMM 15.8GB/16.0GB
 \paragraph{实验硬盘环境} KBG30ZMS512G NVMe TOSHIBA 512GB
 
-\chapter{模块设计}
+\chapter{系统设计}
 \section{功能描述}
 \subsection{建立/删除索引}
 实际的数据库应用中，有在建立表时创建索引和表中有数据情况下创建索引的需求。区别在于，前者不需要其他模块为索引管理器提供数据，仅仅需要分配一个新索引所需的内存和磁盘空间；而后者要求发出建立索引请求的模块提供相应的数据块。默认情况下我们以记录的行号作为B+树中键值对上的“值”，因此我们要求相应数据块是按照它们将来被查找的顺序提供的。
@@ -259,163 +295,52 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 在具体的索引管理器实现上，我们采用了模块层面上的抽象而非类层面的，这更贴合\texttt{Python}语言的风格。
 这样能保证尽量大的抽象层次与代码复用率。值得注意的是，我们在实现B+树相关操作的时候也使用了静态函数来抽象部分内容\footnote{我们将在下一部分详细阐述实现细节}。
 
-
-
-\chapter{遇到的问题及解决方法}
-\section{更改目录结构后\texttt{Python}无法正确引用其他\texttt{.py}文件}
-\subsection{问题描述}
-为了使文件结构更为整洁方便，我们尝试了使用模块来封装各个\texttt{.py}文件与直接调用\texttt{.py}文件或相对引用等多种方式，最初的文件目录如列表\ref{lst:filetree0}所示：
-\begin{longlisting}
-    \begin{minted}{shell}
-        ./
-        |-- some_data_folders
-        |-- some_data_files
-        |-- bplus.py
-        |-- buffer.py
-        |-- exceptions.py
-        |-- ...
-        |-- index.py
-        |-- readme.md
-    \end{minted}
-    % guess you'll be needing more than the correct content but also the correct sequence to achieve proper label
-    \caption{可能的文件目录}
-    \label{lst:filetree0}
-\end{longlisting}
-这种方式下\texttt{Python}脚本只需要使用普通的\texttt{import}或\texttt{from ... import ...}即可正确引用相关文件。
+\chapter{系统实现分析及运行截图}
+\section{创建表语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
 \par
-且得益于IDE特性\footnote{\texttt{Visual Studio Code}，\texttt{PyCharm}等}，当前目录会被自动设置为程序的运行时的根目录，也就意味着程序中对于文件的操作也可正常进行（即使\texttt{Python}脚本与数据文件不在同一文件夹下）。因此我们采用了如列表\ref{lst:filetree1}所示的文件组织结构。
-
-\begin{longlisting}
-    \begin{minted}{shell}
-        ./
-        |-- some_data_folders
-        |-- some_data_files
-        |-- code/
-            |-- bplus.py
-            |-- buffer.py
-            |-- exceptions.py
-            |-- ...
-            |-- index.py
-        |-- readme.md
-        |-- license
-    \end{minted}
-    % guess you'll be needing more than the correct content but also the correct sequence to achieve proper label
-    \caption{可能的文件目录}
-    \label{lst:filetree1}
-\end{longlisting}
-
-这种文件组织结构下，code中的代码可以正常访问根目录中的数据文件和数据文件夹，但无法引用同在\texttt{code}文件夹下的其他\texttt{.py}文件。如列表\ref{lst:cannot_import}所示。
-\begin{longlisting}
-    \begin{minted}{shell}
-In [1]: import blablabla
----------------------------------------------------------------------------
-ModuleNotFoundError                       Traceback (most recent call last)
-<ipython-input-1-7e2f26fa0a8b> in <module>
-----> 1 import blablabla
-
-ModuleNotFoundError: No module named 'blablabla'
-
-In [2]:
-    \end{minted}
-    % guess you'll be needing more than the correct content but also the correct sequence to achieve proper label
-    \caption{无法引用同一文件下的模块}
-    \label{lst:cannot_import}
-\end{longlisting}
-
-\subsection{解决方法}
-我们注意到如下事实：
-\begin{itemize}
-    \item \texttt{Python}根据\texttt{PYTHONPATH}设定的目录进行文件，模块等的搜索。
-    \item PyCharm会将当前工作目录的根目录当作\texttt{Python}工作目录之一，即添加到\texttt{PYTHONPATH}中，如列表\ref{lst:path_append}所示。
-    \item Visual Studio Code会根据当前工作目录下的环境配置文件（\texttt{.env}）而进行目录与模块搜索。
-\end{itemize}
-
-因此，在PyCharm中我们可以通过修改目录等级，对目录做标记来手动使IDE搜索相关内容，如图\ref{fig:folder_label}所示。在Visual Studio Code中我们可以通过编辑如列表\ref{lst:manual_append}所示的环境配置文件来添加相关内容。
+2.API调用interpreter解析并处理错误；
 \par
-由于上述两种方法都是在间接修改运行时的\texttt{PYTHONPATH}，在只用Python执行相关脚本时我们可以通过如列表\ref{lst:path_append}所示的语句执行等价操作。
-
+3.返回API，调用catalog manager，record manager和index manager；
+\par
+4.record manager调用buffer manager，再由buffer manager调用file manager建表；
+\par
+5.index manager调用buffer manager建主键index；
+\par
+6.API计算运行时间，返回给GUI输出。
+\subsection{运行截图}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.4\linewidth]{figure/path_append.jpg}
-    \caption{PyCharm中的文件夹标记}
-    \label{fig:folder_label}
+    \includegraphics[width=0.8\linewidth]{figure/1.1.png}
+    \caption{create table}
+    \label{fig:runtime1.1}
 \end{figure}
-
-
-\begin{longlisting}
-    \begin{minted}{python}
-D:\condaenvs\Anaconda\python.exe "C:\Program Files\JetBrains\PyCharm 2019.3.4\plugins\python\helpers\pydev\pydevconsole.py" --mode=client --port=4243
-import sys; print('Python %s on %s' % (sys.version, sys.platform))
-sys.path.extend(['D:\\Documents\\Materials\\DENDEN\\PROJ\\Database\\miniSQL', 'D:\\Documents\\Materials\\DENDEN\\PROJ\\Database\\miniSQL\\code', 'D:/Documents/Materials/DENDEN/PROJ/Database/miniSQL']) 
-    \end{minted}
-    \caption{PyCharm中的搜索目录自动修改}
-    \label{lst:path_append}
-\end{longlisting}
-
-
-\begin{longlisting}
-    \begin{minted}{python}
-PYTHONPATH=code
-    \end{minted}
-    \caption{PyCharm中的搜索目录自动修改}
-    \label{lst:manual_append}
-\end{longlisting}
-
-\section{使用\texttt{pickle}储存二进制形式的索引超出递归层数限制}
-树是一个递归实现的数据结构，\texttt{Python}提供的二进制储存包\texttt{pickle}需要通过递归调用树中的内容来储存其所包含的信息。因此树高过大会导致超出\texttt{Python}递归限制，如图\ref{fig:recursion_limit}所示。
-
+\section{删除表语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，调用catalog manager得到要删除的表的index，调用index manager删除这些index（index manager将调用buffer manager）；
+\par
+4.调用catalog manager 和record manager删除表（record manager将调用buffer manager并由buffer manager调用file manager进行删除）；
+\par
+5.API统计执行时间，返回给GUI输出。
+\par
+6.API计算运行时间，返回给GUI输出；
+\subsection{运行截图}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.4\linewidth]{figure/recursion_limit.png}
-    \caption{超出递归限制}
-    \label{fig:recursion_limit}
+    \includegraphics[width=0.8\linewidth]{figure/2.1.png}
+    \caption{drop table}
+    \label{fig:runtime1.1}
 \end{figure}
 
-当然我们可以使用列表\ref{lst:change_recursion_limit}所示的代码修改\texttt{Python}对于递归深度的限制。但修改词限制之后系统堆栈同样有机会溢出，在这种情况下系统会直接杀死我们的\texttt{Python}进程，如图\ref{fig:kill_process}所示。
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.4\linewidth]{figure/system_termination.png}
-    \caption{系统杀死当前进程}
-    \label{fig:kill_process}
-\end{figure}
-
-\begin{longlisting}
-    \begin{minted}{python}
-import sys
-sys.setrecursionlimit(10000000)
-    \end{minted}
-    \caption{修改递归限制}
-    \label{lst:change_recursion_limit}
-\end{longlisting}
-最终，我们通过修改B+树的最大子树数量避免了这一问题，在调用\texttt{create\_index}方法时直接设置M值，如列表\ref{lst:change_m}所示。
-
-\begin{longlisting}
-    \begin{minted}{python}
-def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
-    """
-    :param ind: the id of the index to be saved to file
-    :param data_list: the data, as list, to create index on
-    :param cmp: the comparator of the index, defaults to operator<
-    :param is_primary: whether we're dealing with primary key, using sorted list
-    :return: index of the newly created table
-    """
-    if is_primary:
-        t = SortedList()
-    else:
-        # TODO: dynamically compute the M value of the B+ tree
-        # TODO: what if you're out of memory
-        t = Tree(m=50, cmp=cmp)
-    for index, data in enumerate(data_list):
-        # TODO: what happens if you get an error from the B+ tree
-        t.insert(data, index)  # insert data as key and line number as value
-    \end{minted}
-    \caption{调整M值，降低深度}
-    \label{lst:change_m}
-\end{longlisting}
 
 \chapter{总结}
-在本实验中，我们从零实现了B+树模块。借助\texttt{Python}的动态类型语言特性，我们的B+树可以有效对各种\texttt{Python}支持的数据类型进行操作。通过进行单元测试，我们在miniSQL项目整体进行的前期就保证了B+树模块的正确性，为后续调试整合过程带来了极大方便。
+\section{B+树，索引管理器与GUI}
+在本实验中，我们从零实现了B+树模块。借助\texttt{Python}的动态类型语言特性，我们的B+树可以有效对各种\texttt{Python}支持的数据类型进行操作。通过进行单元测试，我们在\textsc{miniSQL}项目整体进行的前期就保证了B+树模块的正确性，为后续调试整合过程带来了极大方便。
 \par
 接着，我们实现了B+树中的索引相关操作。并封装成了一个易用的模块，使得API可以方便的调用。
 \par
