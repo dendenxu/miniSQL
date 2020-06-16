@@ -23,7 +23,7 @@ purple = QColor("#d55fdd")
 font_name_ui = "Ubuntu"
 font_name_mono = "UbuntuMono Nerd Font"
 window_font_scale = 2
-base_font_point_size = 14*window_font_scale
+base_font_point_size = 14 * window_font_scale
 
 
 class OutputLexer(QsciLexerCustom):
@@ -134,7 +134,7 @@ class MiniSQLLexer(QsciLexerSQL):
         self.keyword_font = QFont(font_name_mono)
         self.keyword_font.setBold(True)
         self.keyword_font.setItalic(True)
-        self.keyword_font.setPointSize(14)
+        self.keyword_font.setPointSize(base_font_point_size)
         self.setFont(self.keyword_font, 5)
         self.setColor(purple, 10)
         self.setColor(magenta, 3)
@@ -225,7 +225,6 @@ class CustomMainWindow(QMainWindow):
         self.out_lexer = OutputLexer(self.output)
         self.output.setLexer(self.out_lexer)
 
-
         self.output.setReadOnly(True)
         self.output.setText(
             "Welcome to miniSQL GUI!\nThis is the output window\nThe editor above is where you input SQL queries, you'll find some interesting keyboard shortcuts there\n")
@@ -277,7 +276,11 @@ class CustomMainWindow(QMainWindow):
         content = self.editor.text()
         # todo: actually run the command
         print(content)
-        self.output.setText(str_main(content))
+        stripped = content.strip().lower()
+        if stripped in ["quit", "quit;", "exit", "exit;"]:
+            self.exit_sql()
+        else:
+            self.output.setText(str_main(content))
 
     def exit_sql(self):
         print("You've decided to leave right?")
@@ -289,6 +292,7 @@ class CustomMainWindow(QMainWindow):
 
 
 ''' End Class '''
+
 
 def main():
     app = QApplication(sys.argv)
@@ -309,6 +313,7 @@ def main():
     app.setStyleSheet(style_sheet)
     myGUI = CustomMainWindow()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()
