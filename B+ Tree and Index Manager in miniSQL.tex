@@ -946,13 +946,87 @@ def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
 接着，我们实现了B+树中的索引相关操作。并封装成了一个易用的模块，使得API可以方便的调用。
 \par
 此次实验中我们深刻感受到了小组合作与提前定义接口的重要性，并且在B+树具体实现过程中，我们对单元测试的作用有了更进一步的了解。
-
+\par
+我们通过设计GUI进一步了解了程序设计过程中与人类交互方式的重要性。我们发现图形界面设计与命令行程序各有优劣，经过研究发现很多程序都采用命令行程序提供核心功能，接着通过图形界面将这些核心功能包裹。例如\texttt{Visual Studio}的\texttt{cl.exe}编译器
 
 \newpage
 \part{附录}
 
 
 \begin{appendices}
+\chapter{接口说明}
+\begin{longlisting}
+    \begin{minted}{python}
+    def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
+    """
+    :param ind: the id of the index to be saved to file
+    :param data_list: the data, as list, to create index on
+    :param cmp: the comparator of the index, defaults to operator<
+    :param is_primary: whether we're dealing with primary key, using sorted list
+    :return: index of the newly created table
+    """
+
+
+def drop_index(ind):
+    """
+    :param ind: the id of the index
+    :return: currently nothing is returned
+    """
+
+
+def insert(ind, key, value, is_replace=False):
+    """
+    :param ind: the id of the index
+    :param key: the key to insert into the index
+    :param value: the value of the B+ tree, probably the line number of the inserted item
+    :param is_replace: whether we should replace on duplication
+    :raise KeyException: duplication
+    """
+
+
+def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
+    """
+    A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
+    :param ind: the id of the index to be deleted on
+    :param key: the key/keys to be deleted (single or range)
+    :param is_range: are we searching in range?
+    :return: currently nothing is returned
+    """
+
+
+def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
+    """
+    A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
+    :param ind: the id of the index to be searched on
+    :param key: the key/keys to be searched (single or range)
+    :return: currently nothing is returned
+    """
+
+
+def get_values(ind):
+    """
+    get every value from the bplus tree for printing all information fast enough
+    :param ind: id of the index whose value is to be updated
+    """
+
+
+def update_values(ind, values):
+    """
+    updates information about an index
+    :param ind: id of the index whose value is to be updated
+    :param values: the new values to be set to the index
+    :return:
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+
 \chapter{插图，表格与列表}
 \listoffigures
 % \listoftables
