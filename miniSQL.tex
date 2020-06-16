@@ -241,6 +241,9 @@
 \par
 这一操作类似于范围操作中涉及到的内容，我们需要对B+中的有效节点数目进行检查，根据节点数目选取不同的处理方式。
 
+\subsection{图形界面}
+我们拓展了API模块的接口，通过图形界面来提高用户体验。我们设计了一个编辑器界面，加入了语法提示与自动补全。我们通过\texttt{PyQt}来实现对图形界面的构建。
+
 \section{主要数据结构}
 \subsection{B+树}
 \footnote{此段内容摘自\href{https://en.wikipedia.org/wiki/B+_tree}{WikiPedia}}
@@ -279,7 +282,7 @@ B+ 树的创造者 Rudolf Bayer 没有解释B代表什么。最常见的观点�
 B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完整性，我们也列举了除用户自定义类型以外的类型。}\footnote{我们使用矢量图渲染了字体，若图表过小请放大查看。}。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{figure/bplus.eps}
+    \includegraphics[width=\linewidth]{figure/bplus.eps}
     \caption{B+树的类图与类间关系}
     \label{fig:bplus_diagram}
 \end{figure}
@@ -287,13 +290,21 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 程序使用的异常类图如\ref{fig:exceptions_diagram}所示。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\linewidth]{figure/exceptions.eps}
+    \includegraphics[width=0.7\linewidth]{figure/exceptions.eps}
     \caption{异常的类图与类间关系}
     \label{fig:exceptions_diagram}
 \end{figure}
 \subsection{索引管理器}
 在具体的索引管理器实现上，我们采用了模块层面上的抽象而非类层面的，这更贴合\texttt{Python}语言的风格。
 这样能保证尽量大的抽象层次与代码复用率。值得注意的是，我们在实现B+树相关操作的时候也使用了静态函数来抽象部分内容\footnote{我们将在下一部分详细阐述实现细节}。
+
+\subsection{图形界面}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/gui_class.eps}
+    \caption{图形界面类图}
+    \label{fig:gui_class}
+\end{figure}
 
 \chapter{系统实现分析及运行截图}
 \section{创建表语句}
@@ -327,24 +338,123 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 4.调用catalog manager 和record manager删除表（record manager将调用buffer manager并由buffer manager调用file manager进行删除）；
 \par
 5.API统计执行时间，返回给GUI输出。
-\par
-6.API计算运行时间，返回给GUI输出；
 \subsection{运行截图}
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{figure/2.1.png}
     \caption{drop table}
-    \label{fig:runtime1.1}
+    \label{fig:runtime2.1}
 \end{figure}
-
+\section{创建索引语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，调用catalog manager建立index并返回index id，调用record manager得到要建index的attribute的数据，调用index manager对这些数据建立index；
+\par
+4.API统计执行时间，返回给GUI输出。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/3.1.png}
+    \caption{create index-failed}
+    \label{fig:runtime3.1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/3.2.png}
+    \caption{create index-succeed}
+    \label{fig:runtime3.2}
+\end{figure}
+\section{删除索引语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，调用catalog manager得到要删除的index的id并删除index，调用index manager根据id删除index（index manager将调用buffer manager）；
+\par
+4.API统计执行时间，返回给GUI输出。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/4.1.png}
+    \caption{drop index}
+    \label{fig:runtime4.1}
+\end{figure}
+\section{选择语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，这里分为两种类型，一种是查询的attribute包含index的，一种是不包含index的
+\par
+4.对于包含index的查询，调用index manager进行查询并返回查询结果的行号（将调用buffer manager），将行号和（可能有的）剩余的查询要求交给record manager进行查询（可能需调用buffer manager，并由buffer manager调用file manager得到数据block）；
+\par
+5.对于不包含index的查询，直接调用record manager同上；
+\par
+6.API统计执行时间，返回给GUI输出。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.1.png}
+    \caption{select-int+'='}
+    \label{fig:runtime5.1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.2.png}
+    \caption{select-float+'='}
+    \label{fig:runtime5.2}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.3.png}
+    \caption{select-char+'='}
+    \label{fig:runtime5.3}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.4.png}
+    \caption{select-int+'<>'}
+    \label{fig:runtime5.4}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.5.png}
+    \caption{select-float+;}
+    \label{fig:runtime5.5}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.6.png}
+    \caption{select}
+    \label{fig:runtime5.6}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.7.png}
+    \caption{select}
+    \label{fig:runtime5.7}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/5.8.png}
+    \caption{select}
+    \label{fig:runtime5.8}
+\end{figure}
 
 \chapter{总结}
 \section{B+树，索引管理器与GUI}
-在本实验中，我们从零实现了B+树模块。借助\texttt{Python}的动态类型语言特性，我们的B+树可以有效对各种\texttt{Python}支持的数据类型进行操作。通过进行单元测试，我们在\textsc{miniSQL}项目整体进行的前期就保证了B+树模块的正确性，为后续调试整合过程带来了极大方便。
+在本实验中，我们从零实现了B+树模块。借助\texttt{Python}的动态类型语言特性，我们的B+树可以有效对各种\texttt{Python}支持的数据类型进行操作。通过进行单元测试，我们在miniSQL项目整体进行的前期就保证了B+树模块的正确性，为后续调试整合过程带来了极大方便。
 \par
 接着，我们实现了B+树中的索引相关操作。并封装成了一个易用的模块，使得API可以方便的调用。
 \par
 此次实验中我们深刻感受到了小组合作与提前定义接口的重要性，并且在B+树具体实现过程中，我们对单元测试的作用有了更进一步的了解。
+\par
+我们通过设计GUI进一步了解了程序设计过程中与人类交互方式的重要性。我们发现图形界面设计与命令行程序各有优劣，经过研究发现很多程序都采用命令行程序提供核心功能，接着通过图形界面将这些核心功能包裹。例如\texttt{Visual Studio}的\texttt{cl.exe}编译器
 
 
 \newpage
@@ -353,6 +463,76 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 
 \begin{appendices}
 \chapter{接口说明}
+\begin{longlisting}
+    \begin{minted}{python}
+    def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
+    """
+    :param ind: the id of the index to be saved to file
+    :param data_list: the data, as list, to create index on
+    :param cmp: the comparator of the index, defaults to operator<
+    :param is_primary: whether we're dealing with primary key, using sorted list
+    :return: index of the newly created table
+    """
+
+
+def drop_index(ind):
+    """
+    :param ind: the id of the index
+    :return: currently nothing is returned
+    """
+
+
+def insert(ind, key, value, is_replace=False):
+    """
+    :param ind: the id of the index
+    :param key: the key to insert into the index
+    :param value: the value of the B+ tree, probably the line number of the inserted item
+    :param is_replace: whether we should replace on duplication
+    :raise KeyException: duplication
+    """
+
+
+def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
+    """
+    A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
+    :param ind: the id of the index to be deleted on
+    :param key: the key/keys to be deleted (single or range)
+    :param is_range: are we searching in range?
+    :return: currently nothing is returned
+    """
+
+
+def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
+    """
+    A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
+    :param ind: the id of the index to be searched on
+    :param key: the key/keys to be searched (single or range)
+    :return: currently nothing is returned
+    """
+
+
+def get_values(ind):
+    """
+    get every value from the bplus tree for printing all information fast enough
+    :param ind: id of the index whose value is to be updated
+    """
+
+
+def update_values(ind, values):
+    """
+    updates information about an index
+    :param ind: id of the index whose value is to be updated
+    :param values: the new values to be set to the index
+    :return:
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
 
 \chapter{插图，表格与列表}
 \listoffigures
