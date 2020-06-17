@@ -123,52 +123,266 @@
 \part{正文}
 \chapter{实验目的}
 \section{总体实验目的}
-\paragraph{\textsc{miniSQL}}
+\subsection{\textsc{miniSQL}}
 设计并实现一个精简型单用户SQL引擎(DBMS)\textsc{miniSQL}，允许用户通过字符界面输入SQL 语句实现表的建立/删除；索引的建立/删除以及表记录的插入/删除/查找。
 
-\paragraph{设计目的}
+\subsection{设计目的}
 通过对\textsc{miniSQL}的设计与实现，提高学生的系统编程能力，加深对数据库系统原理的理解。
 通过编程设计，加深对数据库系统的理解并深入了解B+树这一数据结构。
 以模块化方式构建大型计算机软件，提高架构抽象能力并重视模块化和解耦合在软件设计中的作用。
 
 \section{模块实验目的}
-\paragraph{索引管理器}
+\subsection{索引管理器}
 我们负责设计的索引管理器模块主要负责数据库系统中的索引管理，提供基于B+树的索引实现并提高数据库查询/插入/删除效率。并通过提供易用接口与其他模块整合实现有效功能。
 
-\paragraph{缓存管理器}
+\subsection{缓存管理器}
 负责缓冲区的管理，主要功能有：
 1. 根据需要，读取指定的数据到系统缓冲区或将缓冲区中的数据写出到文件。
 2. 实现缓冲区的替换算法，当缓冲区满时选择合适的页进行替换。
 3. 记录缓冲区中各页的状态，如是否被修改过等。
 4. 提供缓冲区页的pin功能，及锁定缓冲区的页，不允许替换出去。
 
-\paragraph{记录管理器}
+\subsection{记录管理器}
 负责管理记录表中数据的数据文件。主要功能为实现数据文件的创建与删除（由表的定义与删除引起）、记录的插入、删除与查找操作，并对外提供相应的接口。其中记录的查找操作要求能够支持不带条件的查找和带一个条件的查找（包括等值查找、不等值查找和区间查找）。数据文件由一个或多个数据块组成，块大小应与缓冲区块大小相同。一个块中包含一条至多条记录，为简单起见，只要求支持定长记录的存储，且不要求支持记录的跨块存储。
 
-\paragraph{目录管理器}
+\subsection{目录管理器}
 负责管理数据库的所有模式信息，包括：
 1. 数据库中所有表的定义信息。
 2. 表中每个字段的定义信息。
 3. 数据库中所有索引的定义。
 
-\paragraph{接口管理器}
+\subsection{接口管理器}
 接口管理器模块是整个系统的核心，其主要功能为提供执行SQL 语句的接口，解释器层调用。解释器 层解释生成的命令内部表示为输入，根据目录管理器提供的信息确定执行规则，并调用记录管理器去，索引管理器，目录管理器提供的相应接口进行执行，最后返回执行结果给解释器模块。
 
-\paragraph{命令行解释器}
+\subsection{命令行解释器}
 解释器模块直接与用户交互，主要实现以下功能：
 1. 程序流程控制，即“启动并初始化→‘接收命令、处理命令、显示命令结果’循环→退出”流程。
 2. 接收并解释用户输入的命令，生成命令的内部数据结构表示，同时检查命令的语法正确性和部分语义正确性，对正确
 的命令调用API 层提供的函数执行并显示执行结果，对不正确的命令显示错误信息。
 
-\paragraph{图形界面}
+\subsection{图形界面}
 我们通过实现图形界面以环节用户对于命令行界面的恐惧（纵使这个图形界面中用户还是要敲写SQL语句），通过\texttt{PyQt}等易用接口实现一个简单的带有语法高亮的编辑器界面，并用对用户友好的方式输入输出各种信息，并提供对于一般编辑器操作的支持（例如多种快捷键和其他功能）。
 
+\chapter{系统需求}
+\section{需求概述}
+\subsection{数据类型}
+只要求支持三种基本数据类型：int，char(n)，float，其中char(n)满足 1 <= n <= 255 。
+\subsection{表定义}
+一个表最多可以定义32 个属性，各属性可以指定是否为unique；支持unique 属性的主键定义。
+\subsection{索引的建立和删除}
+对于表的主键自动建立B+树索引，对于声明为unique 的属性可以通过SQL 语句由用户指定建立/删除B+树索引（因此，所
+有的B+树索引都是单属性单值的）。
+\subsection{查找记录}
+可以通过指定用and 连接的多个条件进行查询，支持等值查询和区间查询。
+\subsection{插入和删除记录}
+支持每次一条记录的插入操作；
+支持每次一条或多条记录的删除操作。(where 条件是范围时删除多条)
+
+\section{语法说明}
+\textsc{miniSQL}支持标准的SQL语句格式，每一条SQL 语句以分号结尾，一条SQL 语句可写在一行或多行。为简化编程，要求所有的关键字都为小写。在以下语句的语法说明中，用黑体显示的部分表示语句中的原始字符串，如\textbf{create}就严格的表示字符串“create”，其他非黑体显示的有其他的含义，如 表名 并不是表示字符串 “表名”，而是表示表的名称。
+\subsection{创建表语句}
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+create table 表名 (
+    列名 类型 ,
+    列名 类型 ,
+    列名 类型 ,
+    primary key ( 列名 )
+);
+
+-- 示例
+create table student (
+    sno char(8),
+    sname char(16) unique,
+    sage int,
+    sgender char (1),
+    primary key ( sno )
+);
+    \end{minted}
+    \caption{Create Table Syntax and Example}
+    \label{lst:create_table_requirements}
+\end{longlisting}
+其中类型的说明见第二节“功能需求”。
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+
+\subsection{删除表语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+drop table 表名 ;
+-- 示例语句：
+drop table student;
+    \end{minted}
+    \caption{Drop Table Syntax and Example}
+    \label{lst:drop_table_requirements}
+\end{longlisting}
+
+\subsection{创建索引语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+create index 索引名 on 表名 ( 列名 );
+-- 示例语句：
+create index stunameidx on student ( sname );
+    \end{minted}
+    \caption{Create Index Syntax and Example}
+    \label{lst:create_index_requirements}
+\end{longlisting}
+
+\subsection{删除索引语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+drop index 索引名 ;
+-- 示例语句
+drop index stunameidx;
+    \end{minted}
+    \caption{Drop Index Syntax and Example}
+    \label{lst:drop_index_requirements}
+\end{longlisting}
+
+\subsection{选择语句}
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+select * from 表名 ;
+-- 或：
+select * from 表名 where 条件 ;
+-- 示例语句
+select * from student;
+select * from student where sno = '88888888';
+select * from student where sage > 20 and sgender = 'F';
+    \end{minted}
+    \caption{Select Syntax and Example}
+    \label{lst:select_requirements}
+\end{longlisting}
+其中“条件”具有以下格式：$列 op 值 and 列 op 值 … and 列 op 值$。
+op 是算术比较符：$= <> < > <= >=$
+若该语句执行成功且查询结果不为空，则按行输出查询结果，第一行为属性名，其余每一行表示一条记录；若查询结果为空，
+则输出信息告诉用户查询结果为空；若失败，必须告诉用户失败的原因。
+
+\subsection{插入记录语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+insert into 表名 values ( 值1 , 值2 , … , 值n );
+-- 示例语句
+insert into student values ('12345678','wy',22,'M');
+    \end{minted}
+    \caption{Insert Syntax and Example}
+    \label{lst:insert_requirements}
+\end{longlisting}
+
+\subsection{删除记录语句}
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+delete from 表名 ;
+-- 或：
+delete from 表名 where 条件 ;
+-- 示例语句
+delete from student;
+delete from student where sno = '88888888';
+    \end{minted}
+    \caption{Delete From Syntax and Example}
+    \label{lst:delete_from_requirements}
+\end{longlisting}
+若该语句执行成功，则输出执行成功信息，其中包括删除的记录数；若失败，必须告诉用户失败的原因。
+
+\subsection{退出\textsc{miniSQL}系统语句}
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+quit;
+exit;
+    \end{minted}
+    \caption{Quit miniSQL Syntax}
+    \label{lst:quit_miniSQL_requirements}
+\end{longlisting}
+
+\subsection{执行SQL脚本文件语句}
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+execfile 文件名 ;
+    \end{minted}
+    \caption{Execute File Syntax}
+    \label{lst:execfile_requirements}
+\end{longlisting}
+SQL 脚本文件中可以包含任意多条上述8 种SQL 语句，MiniSQL 系统读入该文件，然后按序依次逐条执行脚本中的SQL
+语句。
+
+\subsection{关于返回信息}
+返回信息的内容参考mysql，语言限定为英文，主要包括执行sql返回的行数(n row in set), 或者影响的行数(n row affects)，
+必须给出执行SQL所花费的时间Duration。
+执行出错需要指出错误的类型，具体位置不做要求。
+错误类型包括(SYNTAX ERROR， INVALID INDENTIFIER, INVALID VALUE , INVALID ATTR FOR INDEX)，即语法错
+误(语法参考mysql，miniSQL 不支持的数据类型和SQL 等也报语法错误), 标识符错误(不存在的表名，字段名等) , 值错误(变量
+长度不足以容纳实际数据), 索引定义在非unique 属性上。
+可以参考mysql workbench和mysql terminal client的返回信息。
+
+\subsection{关于辅助性命令语句}
+我们定义了如下的辅助性质语句来方便用户使用本数据库.
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+show tables;
+show index from 表名;
+show create table 表名;
+
+-- 示例
+show tables;
+show index from student2;
+show create table student2;
+    \end{minted}
+    \caption{辅助语句}
+    \label{lst:auxiliary_syntax}
+\end{longlisting}
+
+\subsection{关于图形界面}
+我们希望开发一个图形界面以管理用户的输入输出，提供基本按钮和快捷键。并提供图标等。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/gui_requirements.png}
+    \caption{GUI Requirements}
+    \label{fig:gui_requirements}
+\end{figure}
+\subsection{关于代码编辑器}
+我们希望提供一个带有代码高亮功能，自动补全功能，自动换行功能，以及各种编辑器快捷键（复制一行，列操作，关键词操作）等的完整小型sql语句编辑视窗。
+同时，我们希望\textsc{miniSQL}支持多行语句执行的操作。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/editor_requirements.jpg}
+    \caption{Editor Requirements}
+    \label{fig:editor_requirements}
+\end{figure}
+
+\subsection{关于错误提示}
+我们希望错误提示以一种用户容易接受的格式呈现到程序上，例如在所有严重错误前加上Error标识符。
+结合GUI我们将会对这些格式化的错误信息进行高亮以方便用户识别。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/error_requirements.png}
+    \caption{Error Message Requirements}
+    \label{fig:error_message_requirements}
+\end{figure}
+
 \chapter{实验环境}
-\section{系统需求}
-\paragraph{主要开发语言}
-\begin{itemize}
-    \item \texttt{Python 3.7.*/3.8.*}
-\end{itemize}
+\paragraph{主要开发语言}Python 3.7.*/3.8.*
 \paragraph{主要开发环境}
 \begin{itemize}
     \item PyCharm 2020.1
@@ -180,12 +394,7 @@
     \item \textsc{Ubuntu WSL2}
     \item \textsc{MacOS Catalina}
 \end{itemize}
-\paragraph{\texttt{Python}包要求}
-\begin{itemize}
-    \item \texttt{QScintilla, QDarkStyle, PyQt5}
-\end{itemize}
-
-\section{实验环境}
+\paragraph{\texttt{Python}包要求}QScintilla, QDarkStyle, PyQt5
 \paragraph{实验系统环境} \textsc{Microsoft Windows [Version 10.0.18363.836]}
 \paragraph{实验处理器环境} Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz 12 Logical Processors
 \paragraph{实验内存环境} SODIMM 15.8GB/16.0GB
@@ -389,7 +598,7 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 \par
 2.API调用interpreter解析并处理错误；
 \par
-3.返回API，这里分为两种类型，一种是查询的attribute包含index的，一种是不包含index的
+3.返回API，这里分为两种类型，一种是查询的attribute包含index的，一种是不包含index的；
 \par
 4.对于包含index的查询，调用index manager进行查询并返回查询结果的行号（将调用buffer manager），将行号和（可能有的）剩余的查询要求交给record manager进行查询（可能需调用buffer manager，并由buffer manager调用file manager得到数据block）；
 \par
@@ -445,6 +654,112 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
     \caption{select-and}
     \label{fig:runtime5.8}
 \end{figure}
+\section{插入记录语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，调用catalog manager得到unique并进行检查，得到index id并调用index manager进行insert （将调用buffer manager）；
+\par
+4. 调用record manager进行insert（将调用buffer并可能调用file manager存取数据）;
+\par
+5.API统计执行时间，返回给GUI输出。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/6.1.png}
+    \caption{insert-failed}
+    \label{fig:runtime6.1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/6.2.png}
+    \caption{insert-succeed}
+    \label{fig:runtime6.2}
+\end{figure}
+\section{删除记录语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，调用catalog manager得到index id并调用index manager对对应index的数据进行删除（将用到buffer manager），调用record manager进行删除（将用到buffer manager并可能调用file manager进行文件读写）；
+\par
+4.API统计执行时间，返回给GUI输出。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/7.1.png}
+    \caption{delete-use name(index)}
+    \label{fig:runtime7.1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/7.2.png}
+    \caption{delete-use primary key}
+    \label{fig:runtime7.2}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/7.3.png}
+    \caption{delete-use score}
+    \label{fig:runtime7.3}
+\end{figure}
+\section{退出系统语句}
+可以通过“quit;”语句和GUI界面中的quit按钮进行。
+\par
+退出时调用buffer manager->file manager将data，catalog和index的数据都存入文件。
+\section{执行脚本文件语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，读文件，将文件中读到的指令传给API中相应处理函数；
+\par
+4.API统计执行时间，返回给GUI输出并输出“one file done”。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/8.1.png}
+    \caption{execfile-failed}
+    \label{fig:runtime8.1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/8.2.png}
+    \caption{execfile-succeed}
+    \label{fig:runtime8.2}
+\end{figure}
+\section{show语句}
+\subsection{执行流程}
+1.GUI读入，调用API；
+\par
+2.API调用interpreter解析并处理错误；
+\par
+3.返回API，调用catalog manager对需要显示的信息进行查询；
+\par
+4.API统计执行时间，返回给GUI输出。
+\subsection{运行截图}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/9.1.png}
+    \caption{show tables}
+    \label{fig:runtime9.1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/9.2.png}
+    \caption{show create table}
+    \label{fig:runtime9.2}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/9.3.png}
+    \caption{show index}
+    \label{fig:runtime9.3}
+\end{figure}
 
 \chapter{总结}
 \section{B+树，索引管理器与GUI}
@@ -465,7 +780,7 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 \chapter{接口说明}
 \begin{longlisting}
     \begin{minted}{python}
-    def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
+def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
     """
     :param ind: the id of the index to be saved to file
     :param data_list: the data, as list, to create index on
