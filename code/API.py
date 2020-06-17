@@ -222,7 +222,6 @@ def delete(table_name, conditions,if_str_command):
         record_manager.delete_record_with_Index(table_name, 0, conditionlist)
         attr = catalog_manager.get_attribute(table_name)
         num_changed=len(ret)
-        print(ret)
         for i in attr:
             attr1 = i[0]
             if catalog_manager.check_index(table_name, attr1) == 1:
