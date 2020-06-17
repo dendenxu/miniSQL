@@ -147,12 +147,156 @@
 
 \end{itemize}
 
+\chapter{系统需求}
+\section{需求概述}
+\subsection{数据类型}
+由于Python的动态语言特性，索引管理器支持所有可比较类型作为key（对于不可比较类型，需用户自定义比较函数）。
+\subsection{索引的建立和删除}
+对于表的主键自动建立B+树索引，对于声明为unique 的属性可以通过SQL 语句由用户指定建立/删除B+树索引（因此，所
+有的B+树索引都是单属性单值的）。
+\subsection{查找记录}
+可以通过指定用and 连接的多个条件进行查询，支持等值查询和区间查询。
+\subsection{插入和删除记录}
+支持每次一条记录的插入操作；
+支持批量更新操作；
+支持每次一条或多条记录的删除操作。(where 条件是范围时删除多条)
+\subsection{图形界面}
+支持简单GUI操作和编辑器操作。
+
+\section{语法说明}
+我们需要提供索引管理器相关接口共接口模块调用，并提供图形界面与接口模块交互。
+\textbf{索引管理器相关接口请参考附录。}
+
+
+\subsection{创建索引语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+create index 索引名 on 表名 ( 列名 );
+-- 示例语句：
+create index stunameidx on student ( sname );
+    \end{minted}
+    \caption{Create Index Syntax and Example}
+    \label{lst:create_index_requirements}
+\end{longlisting}
+
+\subsection{删除索引语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+drop index 索引名 ;
+-- 示例语句
+drop index stunameidx;
+    \end{minted}
+    \caption{Drop Index Syntax and Example}
+    \label{lst:drop_index_requirements}
+\end{longlisting}
+
+\subsection{选择语句}
+我们需实现基于索引的单值和范围查询语句。
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+select * from 表名 ;
+-- 或：
+select * from 表名 where 条件 ;
+-- 示例语句
+select * from student;
+select * from student where sno = '88888888';
+select * from student where sage > 20 and sgender = 'F';
+    \end{minted}
+    \caption{Select Syntax and Example}
+    \label{lst:select_requirements}
+\end{longlisting}
+其中“条件”具有以下格式：$列 op 值 and 列 op 值 … and 列 op 值$。
+op 是算术比较符：$= <> < > <= >=$
+若该语句执行成功且查询结果不为空，则按行输出查询结果，第一行为属性名，其余每一行表示一条记录；若查询结果为空，
+则输出信息告诉用户查询结果为空；若失败，必须告诉用户失败的原因。
+
+\subsection{插入记录语句}
+我们需实现基于索引的单值插入或批量更新。
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+insert into 表名 values ( 值1 , 值2 , … , 值n );
+-- 示例语句
+insert into student values ('12345678','wy',22,'M');
+    \end{minted}
+    \caption{Insert Syntax and Example}
+    \label{lst:insert_requirements}
+\end{longlisting}
+
+\subsection{删除记录语句}
+我们需实现基于索引的范围或单值删除。
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+delete from 表名 ;
+-- 或：
+delete from 表名 where 条件 ;
+-- 示例语句
+delete from student;
+delete from student where sno = '88888888';
+    \end{minted}
+    \caption{Delete From Syntax and Example}
+    \label{lst:delete_from_requirements}
+\end{longlisting}
+若该语句执行成功，则输出执行成功信息，其中包括删除的记录数；若失败，必须告诉用户失败的原因。
+
+\subsection{退出\textsc{miniSQL}系统语句}
+我们在图形界面层直接实现了对于退出命令的执行，免于将图形接口暴露给内部API。
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+quit;
+exit;
+    \end{minted}
+    \caption{Quit miniSQL Syntax}
+    \label{lst:quit_miniSQL_requirements}
+\end{longlisting}
+
+\subsection{关于返回信息}
+我们通过抛出异常的方式来反馈索引操作的状态，这样可以使接口模块免于处理过于冗杂的返回值，只需要接受并处理相关异常。
+
+\subsection{关于图形界面}
+我们希望开发一个图形界面以管理用户的输入输出，提供基本按钮和快捷键。并提供图标等。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/gui_requirements.png}
+    \caption{GUI Requirements}
+    \label{fig:gui_requirements}
+\end{figure}
+\subsection{关于代码编辑器}
+我们希望提供一个带有代码高亮功能，自动补全功能，自动换行功能，以及各种编辑器快捷键（复制一行，列操作，关键词操作）等的完整小型sql语句编辑视窗。
+同时，我们希望\textsc{miniSQL}支持多行语句执行的操作。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/editor_requirements.jpg}
+    \caption{Editor Requirements}
+    \label{fig:editor_requirements}
+\end{figure}
+
+\subsection{关于错误提示}
+我们希望错误提示以一种用户容易接受的格式呈现到程序上，例如在所有严重错误前加上Error标识符。
+结合GUI我们将会对这些格式化的错误信息进行高亮以方便用户识别。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/error_requirements.png}
+    \caption{Error Message Requirements}
+    \label{fig:error_message_requirements}
+\end{figure}
+
 \chapter{实验环境}
-\section{系统需求}
-\paragraph{主要开发语言}
-\begin{itemize}
-    \item \texttt{Python 3.7.*/3.8.*}
-\end{itemize}
+\paragraph{主要开发语言}Python 3.7.*/3.8.*
 \paragraph{主要开发环境}
 \begin{itemize}
     \item PyCharm 2020.1
@@ -164,16 +308,12 @@
     \item \textsc{Ubuntu WSL2}
     \item \textsc{MacOS Catalina}
 \end{itemize}
-\paragraph{\texttt{Python}包要求}
-\begin{itemize}
-    \item \texttt{QScintilla, QDarkStyle, PyQt5}
-\end{itemize}
-
-\section{实验环境}
+\paragraph{\texttt{Python}包要求}QScintilla, QDarkStyle, PyQt5
 \paragraph{实验系统环境} \textsc{Microsoft Windows [Version 10.0.18363.836]}
 \paragraph{实验处理器环境} Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz 12 Logical Processors
 \paragraph{实验内存环境} SODIMM 15.8GB/16.0GB
 \paragraph{实验硬盘环境} KBG30ZMS512G NVMe TOSHIBA 512GB
+
 
 \chapter{模块设计}
 \section{功能描述}
@@ -888,6 +1028,7 @@ PYTHONPATH=code
 \end{longlisting}
 
 \section{使用\texttt{pickle}储存二进制形式的索引超出递归层数限制}
+\subsection{问题描述}
 树是一个递归实现的数据结构，\texttt{Python}提供的二进制储存包\texttt{pickle}需要通过递归调用树中的内容来储存其所包含的信息。因此树高过大会导致超出\texttt{Python}递归限制，如图\ref{fig:recursion_limit}所示。
 
 \begin{figure}[H]
@@ -897,6 +1038,7 @@ PYTHONPATH=code
     \label{fig:recursion_limit}
 \end{figure}
 
+\subsection{解决方法}
 当然我们可以使用列表\ref{lst:change_recursion_limit}所示的代码修改\texttt{Python}对于递归深度的限制。但修改词限制之后系统堆栈同样有机会溢出，在这种情况下系统会直接杀死我们的\texttt{Python}进程，如图\ref{fig:kill_process}所示。
 
 \begin{figure}[H]
