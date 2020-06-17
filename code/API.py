@@ -87,8 +87,21 @@ def select(table_name, conditions,if_str_command):
         conditionlist.append(cond)
     # print(conditionlist[0].type,conditionlist[0].attribute,conditionlist[0].value)
     if(if_str_command):
-        ret=str(record_manager.select_record_with_Index(table_name, 0, conditionlist))+"\n"
-        return ret
+        ret=record_manager.select_record_with_Index(table_name, 0, conditionlist)
+        result = ""
+        if len(ret) == 0:
+            return "empty"
+        result = result + "number of record selected:" + str(len(ret)) + "\n"
+        attr = catalog_manager.get_attribute(table_name)
+        for attribute in attr:
+                result = result + attribute[0] + "\t\t"
+        result = result + "\n"
+        for info in ret:
+            if info[0]>=1080101000:
+                result=result+str(info[0])+"\t"+str(info[1])+"\t"+str(info[2])+"\n"
+            else:
+                result = result + str(info[0]) + "\t" + str(info[1]) + "\t\t" + str(info[2]) + "\n"
+        return result
     print(record_manager.select_record_with_Index(table_name, 0, conditionlist))
 
 
@@ -134,21 +147,29 @@ def select_index(table_name, not_index_conditions, index_conditions,if_str_comma
                 cond.type = 3
             conditionlist.append(cond)
         if(if_str_command):
-            # ret=''
-            # l=record_manager.select_record_with_Index(table_name, templist, conditionlist)
-            # for i in l:
-            #     for j in i:
-            #         print(str(j))
-            #         ret=ret+str(j)+" "
-            #     ret=ret+"\n"
-            ret=str(record_manager.select_record_with_Index(table_name, templist, conditionlist))
-            return ret
+            result=""
+            ret=record_manager.select_record_with_Index(table_name, templist, conditionlist)
+            if len(ret)==0:
+                return "empty"
+            result=result+"number of record selected:"+str(len(ret))+"\n"
+            attr = catalog_manager.get_attribute(table_name)
+            cnt = 0
+            for attribute in attr:
+                result = result + attribute[0] + "\t\t"
+            result = result + "\n"
+            for info in ret:
+                if info[0] >= 1080101000:
+                    result = result + str(info[0]) + "\t" + str(info[1]) + "\t" + str(info[2]) + "\n"
+                else:
+                    result = result + str(info[0]) + "\t" + str(info[1]) + "\t\t" + str(info[2]) + "\n"
+            return result
         print(record_manager.select_record_with_Index(table_name, templist, conditionlist))
 
 
 def delete(table_name, conditions,if_str_command):
+    num_changed=0
     if_index = catalog_manager.check_index(table_name, conditions.attribute_name)
-    if if_index:
+    if if_index==1:
         index_id = catalog_manager.get_index_id(table_name, conditions.attribute_name)
         if conditions.op == '=':
             temp = index.search(index_id, conditions.operand, is_range=False, is_not_equal=False)
@@ -169,9 +190,11 @@ def delete(table_name, conditions,if_str_command):
             temp = index.search(index_id, conditions.operand, is_greater=True, is_current=True, is_range=True,is_not_equal=False)
             index.delete(index_id, conditions.operand, is_greater=True, is_current=True, is_range=True, is_not_equal=False)
         if (type(temp) == int):
+            num_changed=1
             ret=record_manager.select_record_with_Index(table_name,[[temp]],[])
             record_manager.delete_record_with_Index(table_name,[[temp]],[])
         else:
+            num_changed=len(temp)
             ret=record_manager.select_record_with_Index(table_name, [temp], [])
             record_manager.delete_record_with_Index(table_name, [temp], [])
         attr = catalog_manager.get_attribute(table_name)
@@ -198,6 +221,8 @@ def delete(table_name, conditions,if_str_command):
         ret = record_manager.select_record_with_Index(table_name, 0, conditionlist)
         record_manager.delete_record_with_Index(table_name, 0, conditionlist)
         attr = catalog_manager.get_attribute(table_name)
+        num_changed=len(ret)
+        print(ret)
         for i in attr:
             attr1 = i[0]
             if catalog_manager.check_index(table_name, attr1) == 1:
@@ -205,6 +230,7 @@ def delete(table_name, conditions,if_str_command):
                 for infomation in ret:
                     index.delete(index_id, infomation[catalog_manager.get_attribute_cnt(table_name, attr1)],
                                  is_range=False, is_not_equal=False)
+    return "number of records deleted:"+str(num_changed)+"\n"
 
 
 def insert(table_name, values,if_str_command):
