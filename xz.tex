@@ -38,6 +38,9 @@
 % To use hyper-reference and stuff
 %------- ----------------------------------------------------------------------------------
 \usepackage{hyperref} % needed for hyperlinks
+% \usepackage{bold-extra}
+% \usepackage[T1]{fontenc}
+% \usepackage{libertine} % this is a temp solution, should consider on using other packages for font
 \hypersetup{ % hyper link setups, can be used else where
     colorlinks=true,
     linkcolor=blue,
@@ -91,22 +94,30 @@
 %-----------------------------------------------------------------------------------------
 % To predefine title and stuff
 %-----------------------------------------------------------------------------------------
-\title{数据库系统实验报告\\
-  B+ Tree and Index Manager in \texttt{miniSQL} \\
-  \large \texttt{miniSQL}设计中的B+树和索引管理器}
-
-\author{
-教师：孙建伶\\
-姓名：徐震\\
-学号：3180105504\\
-邮箱：\href{3180105504@zju.edu.cn}{3180105504@zju.edu.cn}\\
-电话：18888916826
-}
-\date{\today}
 
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.75\textwidth]{figure/浙江大学.eps}\par\vspace{1cm}
+% 	{\scshape\LARGE Columbidae University \par}
+% 	\vspace{1cm}
+	{\textsc{\LARGE 数据库系统实验报告}\par}
+	\vspace{1.5cm}
+	{\huge\textsc{miniSQL}\par}
+	{\huge\textbf{B+树、索引管理器与GUI实验报告}\par}
+	\vspace{2cm}
+	{\Large\itshape 徐震 \textbf{3180105504} 18888916826\par}
+	\vfill
+	指导教师\par
+	\textit{孙建伶}
+
+	\vfill
+
+% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
+
 \newpage
 \tableofcontents
 \newpage
@@ -130,14 +141,162 @@
     \item 支持除B+树以外的数据结构索引（如排序数组索引），控制接口。
     \item 基于\texttt{Exception}（异常）的错误信息传递路径。
     \item 基于\texttt{Python}语言的多种数据类型索引支持。
+    
+\paragraph{图形界面}
+我们通过实现图形界面以环节用户对于命令行界面的恐惧（纵使这个图形界面中用户还是要敲写SQL语句），通过\texttt{PyQt}等易用接口实现一个简单的带有语法高亮的编辑器界面，并用对用户友好的方式输入输出各种信息，并提供对于一般编辑器操作的支持（例如多种快捷键和其他功能）。
+
 \end{itemize}
+
+\chapter{系统需求}
+\section{需求概述}
+\subsection{数据类型}
+由于Python的动态语言特性，索引管理器支持所有可比较类型作为key（对于不可比较类型，需用户自定义比较函数）。
+\subsection{索引的建立和删除}
+对于表的主键自动建立B+树索引，对于声明为unique 的属性可以通过SQL 语句由用户指定建立/删除B+树索引（因此，所
+有的B+树索引都是单属性单值的）。
+\subsection{查找记录}
+可以通过指定用and 连接的多个条件进行查询，支持等值查询和区间查询。
+\subsection{插入和删除记录}
+支持每次一条记录的插入操作；
+支持批量更新操作；
+支持每次一条或多条记录的删除操作。(where 条件是范围时删除多条)
+\subsection{图形界面}
+支持简单GUI操作和编辑器操作。
+
+\section{语法说明}
+我们需要提供索引管理器相关接口共接口模块调用，并提供图形界面与接口模块交互。
+\textbf{索引管理器相关接口请参考附录。}
+
+
+\subsection{创建索引语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+create index 索引名 on 表名 ( 列名 );
+-- 示例语句：
+create index stunameidx on student ( sname );
+    \end{minted}
+    \caption{Create Index Syntax and Example}
+    \label{lst:create_index_requirements}
+\end{longlisting}
+
+\subsection{删除索引语句}
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+drop index 索引名 ;
+-- 示例语句
+drop index stunameidx;
+    \end{minted}
+    \caption{Drop Index Syntax and Example}
+    \label{lst:drop_index_requirements}
+\end{longlisting}
+
+\subsection{选择语句}
+我们需实现基于索引的单值和范围查询语句。
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+select * from 表名 ;
+-- 或：
+select * from 表名 where 条件 ;
+-- 示例语句
+select * from student;
+select * from student where sno = '88888888';
+select * from student where sage > 20 and sgender = 'F';
+    \end{minted}
+    \caption{Select Syntax and Example}
+    \label{lst:select_requirements}
+\end{longlisting}
+其中“条件”具有以下格式：$列 op 值 and 列 op 值 … and 列 op 值$。
+op 是算术比较符：$= <> < > <= >=$
+若该语句执行成功且查询结果不为空，则按行输出查询结果，第一行为属性名，其余每一行表示一条记录；若查询结果为空，
+则输出信息告诉用户查询结果为空；若失败，必须告诉用户失败的原因。
+
+\subsection{插入记录语句}
+我们需实现基于索引的单值插入或批量更新。
+该语句的语法如下：
+若该语句执行成功，则输出执行成功信息；若失败，必须告诉用户失败的原因。
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+insert into 表名 values ( 值1 , 值2 , … , 值n );
+-- 示例语句
+insert into student values ('12345678','wy',22,'M');
+    \end{minted}
+    \caption{Insert Syntax and Example}
+    \label{lst:insert_requirements}
+\end{longlisting}
+
+\subsection{删除记录语句}
+我们需实现基于索引的范围或单值删除。
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+delete from 表名 ;
+-- 或：
+delete from 表名 where 条件 ;
+-- 示例语句
+delete from student;
+delete from student where sno = '88888888';
+    \end{minted}
+    \caption{Delete From Syntax and Example}
+    \label{lst:delete_from_requirements}
+\end{longlisting}
+若该语句执行成功，则输出执行成功信息，其中包括删除的记录数；若失败，必须告诉用户失败的原因。
+
+\subsection{退出\textsc{miniSQL}系统语句}
+我们在图形界面层直接实现了对于退出命令的执行，免于将图形接口暴露给内部API。
+该语句的语法如下：
+\begin{longlisting}
+    \begin{minted}{mysql}
+-- 语法说明
+quit;
+exit;
+    \end{minted}
+    \caption{Quit miniSQL Syntax}
+    \label{lst:quit_miniSQL_requirements}
+\end{longlisting}
+
+\subsection{关于返回信息}
+我们通过抛出异常的方式来反馈索引操作的状态，这样可以使接口模块免于处理过于冗杂的返回值，只需要接受并处理相关异常。
+
+\subsection{关于图形界面}
+我们希望开发一个图形界面以管理用户的输入输出，提供基本按钮和快捷键。并提供图标等。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/gui_requirements.png}
+    \caption{GUI Requirements}
+    \label{fig:gui_requirements}
+\end{figure}
+\subsection{关于代码编辑器}
+我们希望提供一个带有代码高亮功能，自动补全功能，自动换行功能，以及各种编辑器快捷键（复制一行，列操作，关键词操作）等的完整小型sql语句编辑视窗。
+同时，我们希望\textsc{miniSQL}支持多行语句执行的操作。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/editor_requirements.jpg}
+    \caption{Editor Requirements}
+    \label{fig:editor_requirements}
+\end{figure}
+
+\subsection{关于错误提示}
+我们希望错误提示以一种用户容易接受的格式呈现到程序上，例如在所有严重错误前加上Error标识符。
+结合GUI我们将会对这些格式化的错误信息进行高亮以方便用户识别。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/error_requirements.png}
+    \caption{Error Message Requirements}
+    \label{fig:error_message_requirements}
+\end{figure}
+
 \chapter{实验环境}
-\section{系统需求}
-\paragraph{主要开发语言}
-\begin{itemize}
-    \item Python 3.7.5
-    \item Python 3.7.6
-\end{itemize}
+\paragraph{主要开发语言}Python 3.7.*/3.8.*
 \paragraph{主要开发环境}
 \begin{itemize}
     \item PyCharm 2020.1
@@ -145,15 +304,16 @@
 \end{itemize}
 \paragraph{经过测试的系统环境}
 \begin{itemize}
-    \item Microsoft Windows [Version 10.0.18363.836]
-    \item Ubuntu WSL2
+    \item \textsc{Microsoft Windows [Version 10.0.18363.836]}
+    \item \textsc{Ubuntu WSL2}
+    \item \textsc{MacOS Catalina}
 \end{itemize}
-
-\section{实验环境}
-\paragraph{实验系统环境} Microsoft Windows [Version 10.0.18363.836]
+\paragraph{\texttt{Python}包要求}QScintilla, QDarkStyle, PyQt5
+\paragraph{实验系统环境} \textsc{Microsoft Windows [Version 10.0.18363.836]}
 \paragraph{实验处理器环境} Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz 12 Logical Processors
 \paragraph{实验内存环境} SODIMM 15.8GB/16.0GB
 \paragraph{实验硬盘环境} KBG30ZMS512G NVMe TOSHIBA 512GB
+
 
 \chapter{模块设计}
 \section{功能描述}
@@ -205,6 +365,9 @@
 \par
 这一操作类似于范围操作中涉及到的内容，我们需要对B+中的有效节点数目进行检查，根据节点数目选取不同的处理方式。
 
+\subsection{图形界面}
+我们拓展了API模块的接口，通过图形界面来提高用户体验。我们设计了一个编辑器界面，加入了语法提示与自动补全。我们通过\texttt{PyQt}来实现对图形界面的构建。
+
 \section{主要数据结构}
 \subsection{B+树}
 \footnote{此段内容摘自\href{https://en.wikipedia.org/wiki/B+_tree}{WikiPedia}}
@@ -243,7 +406,7 @@ B+ 树的创造者 Rudolf Bayer 没有解释B代表什么。最常见的观点�
 B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完整性，我们也列举了除用户自定义类型以外的类型。}\footnote{我们使用矢量图渲染了字体，若图表过小请放大查看。}。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{figure/bplus.eps}
+    \includegraphics[width=\linewidth]{figure/bplus.eps}
     \caption{B+树的类图与类间关系}
     \label{fig:bplus_diagram}
 \end{figure}
@@ -251,13 +414,21 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 程序使用的异常类图如\ref{fig:exceptions_diagram}所示。
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\linewidth]{figure/exceptions.eps}
+    \includegraphics[width=0.7\linewidth]{figure/exceptions.eps}
     \caption{异常的类图与类间关系}
     \label{fig:exceptions_diagram}
 \end{figure}
 \subsection{索引管理器}
 在具体的索引管理器实现上，我们采用了模块层面上的抽象而非类层面的，这更贴合\texttt{Python}语言的风格。
 这样能保证尽量大的抽象层次与代码复用率。值得注意的是，我们在实现B+树相关操作的时候也使用了静态函数来抽象部分内容\footnote{我们将在下一部分详细阐述实现细节}。
+
+\subsection{图形界面}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{figure/gui_class.eps}
+    \caption{图形界面类图}
+    \label{fig:gui_class}
+\end{figure}
 
 \chapter{模块实现}
 我们通过\texttt{Python}语言来实现各个模块和类。下面我们会通过
@@ -647,6 +818,115 @@ class TreeException(MiniSQLException):
     \end{algorithmic}
 \end{algorithm}
 
+\subsection{图形界面的设计}
+我们使用：
+\begin{itemize}
+    \item \texttt{PyQt5}
+    \item \texttt{QDarkStyle}
+    \item \texttt{QScintilla}
+\end{itemize}
+来搭建了GUI的整体框架，并通过添加：
+\begin{itemize}
+    \item 编辑器相关操作。
+    \item 语法解析与代码高亮。
+    \item 错误信息高亮。
+    \item 语法自动补全。
+    \item 快捷键。
+\end{itemize}
+等功能来完善用户体验。由于这部分代码与数据库系统设计的核心没有太大关联，我们仅仅列出一部分核心代码，如列表\ref{lst:gui_implementation}所示。
+\begin{longlisting}
+\begin{minted}{python}
+# Import modules
+...
+
+# Define colors and fonts and geometry constants
+...
+
+class OutputLexer(QsciLexerCustom):
+    def __init__(self, parent):
+        # Set up lexer font
+        # Set up lexer highlighting color
+        # Set up lexer highlighting format
+
+    def styleText(self, start, end):
+        # 1. Initialize the styling procedure
+        # ------------------------------------
+        self.startStyling(start)
+
+        # 2. Slice out a part from the text
+        # ----------------------------------
+        text = self.parent().text()[start:end]
+
+        ...
+
+    def description(self, style):
+        ...
+
+class MiniSQLLexer(QsciLexerSQL):
+    def __init__(self, parent):
+        # Set up lexer font
+        # Set up lexer highlighting color
+        # Set up lexer highlighting format
+        ...
+
+class CustomMainWindow(QMainWindow):
+    def __init__(self):
+        super(CustomMainWindow, self).__init__()
+        init()  # the API setup
+        # 1. Define the geometry of the main window
+        init_geometry = (300, 300, 800*window_font_scale, 400*window_font_scale)
+
+        self.setGeometry(*init_geometry)
+        self.setWindowTitle("miniSQL GUI")
+        # Create frame and layout
+        ...
+        # Place buttons
+        ...
+        # ! Make instance of QsciScintilla class!
+        # Add autocompletion and lexer
+        self.editor = QsciScintilla()
+        # adding the SQL lexer to the editor
+        self.sql_lexer = MiniSQLLexer(self.editor)
+        self.api = QsciAPIs(self.sql_lexer)
+        ...
+        self.output.append("Error: table table_name is not found\n")
+        self.output.append("Warning: key is duplicated and we're replacing it\n")
+        self.output.append("Info: we've added 100 rows in 0.01s")
+        ...
+        self.editor.setFocus()
+        self.show()
+
+    def setupEditorStyle(self, editor):
+        ...
+    ''''''
+    def run_sql(self):
+        content = self.editor.text()
+        stripped = content.strip().lower()
+        if stripped in ["quit", "quit;", "exit", "exit;"]:
+            self.exit_sql()
+        else:
+            self.output.setText(str_main(content))
+    def exit_sql(self):
+        sql_exit()
+        self.close()
+    ''''''
+''' End Class '''
+def main():
+    app = QApplication(sys.argv)
+    # Load local font
+    ...
+    app.setWindowIcon(QIcon('figure/miniSQL.svg'))
+    style_sheet = qdarkstyle.load_stylesheet(qt_api='pyqt5')
+    app.setStyleSheet(style_sheet)
+    myGUI = CustomMainWindow()
+    sys.exit(app.exec_())
+
+''''''
+\end{minted}
+\caption{GUI具体实现}
+\label{lst:gui_implementation}
+\end{longlisting}
+
 \chapter{遇到的问题及解决方法}
 \section{更改目录结构后\texttt{Python}无法正确引用其他\texttt{.py}文件}
 \subsection{问题描述}
@@ -748,6 +1028,7 @@ PYTHONPATH=code
 \end{longlisting}
 
 \section{使用\texttt{pickle}储存二进制形式的索引超出递归层数限制}
+\subsection{问题描述}
 树是一个递归实现的数据结构，\texttt{Python}提供的二进制储存包\texttt{pickle}需要通过递归调用树中的内容来储存其所包含的信息。因此树高过大会导致超出\texttt{Python}递归限制，如图\ref{fig:recursion_limit}所示。
 
 \begin{figure}[H]
@@ -757,6 +1038,7 @@ PYTHONPATH=code
     \label{fig:recursion_limit}
 \end{figure}
 
+\subsection{解决方法}
 当然我们可以使用列表\ref{lst:change_recursion_limit}所示的代码修改\texttt{Python}对于递归深度的限制。但修改词限制之后系统堆栈同样有机会溢出，在这种情况下系统会直接杀死我们的\texttt{Python}进程，如图\ref{fig:kill_process}所示。
 
 \begin{figure}[H]
@@ -806,7 +1088,8 @@ def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
 接着，我们实现了B+树中的索引相关操作。并封装成了一个易用的模块，使得API可以方便的调用。
 \par
 此次实验中我们深刻感受到了小组合作与提前定义接口的重要性，并且在B+树具体实现过程中，我们对单元测试的作用有了更进一步的了解。
-
+\par
+我们通过设计GUI进一步了解了程序设计过程中与人类交互方式的重要性。我们发现图形界面设计与命令行程序各有优劣，经过研究发现很多程序都采用命令行程序提供核心功能，接着通过图形界面将这些核心功能包裹。例如\texttt{Visual Studio}的\texttt{cl.exe}编译器
 
 \newpage
 \part{附录}
@@ -814,6 +1097,77 @@ def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
 
 \begin{appendices}
 \chapter{接口说明}
+\begin{longlisting}
+    \begin{minted}{python}
+    def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
+    """
+    :param ind: the id of the index to be saved to file
+    :param data_list: the data, as list, to create index on
+    :param cmp: the comparator of the index, defaults to operator<
+    :param is_primary: whether we're dealing with primary key, using sorted list
+    :return: index of the newly created table
+    """
+
+
+def drop_index(ind):
+    """
+    :param ind: the id of the index
+    :return: currently nothing is returned
+    """
+
+
+def insert(ind, key, value, is_replace=False):
+    """
+    :param ind: the id of the index
+    :param key: the key to insert into the index
+    :param value: the value of the B+ tree, probably the line number of the inserted item
+    :param is_replace: whether we should replace on duplication
+    :raise KeyException: duplication
+    """
+
+
+def search(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
+    """
+    A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
+    :param ind: the id of the index to be deleted on
+    :param key: the key/keys to be deleted (single or range)
+    :param is_range: are we searching in range?
+    :return: currently nothing is returned
+    """
+
+
+def delete(ind, key, is_greater=None, is_current=None, is_range=False, is_not_equal=False):
+    """
+    A thin wrapper around _operate
+    :param is_current: whether we want a single value range search with current node
+    :param is_greater: whether we want a single value range search of greater than
+    :param ind: the id of the index to be searched on
+    :param key: the key/keys to be searched (single or range)
+    :return: currently nothing is returned
+    """
+
+
+def get_values(ind):
+    """
+    get every value from the bplus tree for printing all information fast enough
+    :param ind: id of the index whose value is to be updated
+    """
+
+
+def update_values(ind, values):
+    """
+    updates information about an index
+    :param ind: id of the index whose value is to be updated
+    :param values: the new values to be set to the index
+    :return:
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
 
 \chapter{插图，表格与列表}
 \listoffigures
