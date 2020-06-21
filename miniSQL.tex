@@ -10,7 +10,7 @@
 \usepackage{multirow} % for multirow tables
 \usepackage{booktabs} % for prettier tables
 \usepackage[title]{appendix} % create appendices
-%-----------------------------------------------------------------------------------------
+%------------------------------------------------------------------ -----------------------
 % To write pseudo-code
 %-----------------------------------------------------------------------------------------
 \usepackage{algorithm}  
@@ -499,6 +499,27 @@ show create table student2;
 \paragraph{创建/删除/清空表}
 调用缓存管理器中DataBuffer对象的成员函数完成，不需要返回任何信息。
 
+\subsection{目录管理器}
+\paragraph{管理元数据}	
+对表格（表名，主键，表的属性）和索引元数据进行插入和删除。
+
+\paragraph{查询元数据}
+根据API和interpreter的需求，对表名，表格属性（主键，unique，带索引的属性等），索引（是否存在，索引id等）进行查询。
+
+\subsection{API}
+\paragraph{调用各模块执行指令}	
+对于以各种形式（字符串，控制台输入，文件输入）输入的指令，进行初步分解并调用interpreter进行解析；对于interpreter解析报错后的指令，按一定顺序调用对应模块进行查错和具体执行，并以要求的格式返回给输出或GUI。
+
+\paragraph{处理报错信息}
+处理来自各个模块不同形式的报错信息。
+
+\subsection{interpreter}
+\paragraph{解析指令}	
+将字符串型的指令解析为方便API处理的类。
+
+\paragraph{处理可能的报错}
+调用catalog manager，根据指令信息和元数据信息进行基本的报错。
+
 \section{主要数据结构}
 \subsection{B+树}
 \footnote{此段内容摘自\href{https://en.wikipedia.org/wiki/B+_tree}{WikiPedia}}
@@ -570,6 +591,89 @@ B+ 树的创造者 Rudolf Bayer 没有解释B代表什么。最常见的观点�
 	\item 值(value)：条件中参与比较的值。
 \end{itemize}
 
+\subsection{通用基本类}
+对attribute，table，index定义了三个模块间通用的基本类并存放在minisqlclass.py中，通过import调用。
+\begin{longlisting}
+    \begin{minted}{python}
+class Attribute:
+    def __init__(self, name="", type="", length=0, isP=False, isU=False):
+        self.name = name
+        self.type = type
+        self.length = length
+        self.isPrimary = isP
+        self.isUnique = isU
+class Table:
+    def __init__(self, name="", attributeList=list(), size=0):
+        self.name = name
+        self.attributeList = attributeList[:]     #attribute类
+        self.attributeNum = len(attributeList)
+        self.size = size
+class Index:
+    def __init__(self, tableName="", indexName="", attrName="", id=-1):
+        self.table_name = tableName
+        self.index_name = indexName
+        self.index_id = id
+        self.attribute_name = attrName
+class Condition:
+    def __init__(self, attribute_name="", op='', operand=None):
+        self.attribute_name = attribute_name
+        self.op = op
+        self.operand = operand
+    \end{minted}
+    \caption{通用基本类说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\subsection{异常类}
+定义了error类，处理了interpreter能够发现的大部分错误类型。
+\begin{longlisting}
+    \begin{minted}{python}
+class error_type:
+    def __init__(self):
+        self.NONE = ""
+        self.syn = "Error : syntax error"
+        self.ivld_cmd = "Error : no query specified"
+        self.exist_t = "Error : table {} already exists"  # todo: add format
+        self.exist_i = "Error : index on {} on table {} already exists"  # todo: add format
+        self.exist_attrib = "Error : attribute {} on table {} is exist"  # todo: add format
+        self.not_exist_t = "Error : table {} does not exist"  # todo: add format
+        self.not_exist_i = "Error : index {} does not exist"  # todo: add format
+        self.not_exist_a = "Error : attribute {} on table {} does not exist"  # todo: add format
+        self.ivld_char = "Error : invalid char"
+        self.ivld_dt_tp = "Error : invalid data type"
+        self.no_prim_k = "Error : no primary key"
+        self.invalid_prim_k = "Error : invalid primary key"
+        self.not_exist_k = "Error : key {} on attribute {} on table {} does not exist"  # todo: add format
+        self.ept_i = "Error : empty index {} on table {}"  # todo: add format
+        self.ept_t = "Error : empty table {}"  # todo: add format
+        self.no_unq_a = "Error : the attribute {} on table {} is not unique"  # todo: add format
+        self.insert_not_match = "Error : inserted data not match"
+        self.out_of_range = "Error : data out of range"
+    \end{minted}
+    \caption{异常类说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\subsection{command类和CatalogManager类}
+定义了interpreter中的command类和catalog manager类。
+\begin{longlisting}
+    \begin{minted}{python}
+class command:
+    def __init__(self, catalog_manager):
+        self.error_tp = error.NONE
+        self.catalog = catalog_manager
+class CatalogManager:
+    def __init__(self, table=[], index=[]):
+        self.table = table[:]      #table类
+        self.index = index[:]      #index类
+        self.tableNum = int(len(table))
+        self.indexNum = len(index)
+        self.indexcnt = 0
+    \end{minted}
+    \caption{command类和CatalogManager类说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
 \section{类图与类间关系}
 \subsection{B+树}
 B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完整性，我们也列举了除用户自定义类型以外的类型。}\footnote{我们使用矢量图渲染了字体，若图表过小请放大查看。}。
@@ -607,6 +711,11 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
     \caption{缓存管理器类间关系}
     \label{fig:class1}
 \end{figure}
+
+\subsection{其它}
+对通用基本类，类间关系为table类使用了attribute类。
+
+对command类和catalog manager类，类间关系为command包括了catalog类，而catalog类包括了上面描述的三种基本类。
 
 \chapter{系统实现分析及运行截图}
 \section{创建表语句}
