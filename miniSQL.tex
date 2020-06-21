@@ -166,9 +166,9 @@
 \chapter{系统需求}
 \section{需求概述}
 \subsection{数据类型}
-只要求支持三种基本数据类型：int，char(n)，float，其中char(n)满足 1 <= n <= 255 。
+只要求支持三种基本数据类型：int，char(n)，float。
 \subsection{表定义}
-一个表最多可以定义32 个属性，各属性可以指定是否为unique；支持unique 属性的主键定义。
+一个表可以定义多个属性，各属性可以指定是否为unique；每一个表必须对某一个unique属性定义主键，否则报错。
 \subsection{索引的建立和删除}
 对于表的主键自动建立B+树索引，对于声明为unique 的属性可以通过SQL 语句由用户指定建立/删除B+树索引（因此，所
 有的B+树索引都是单属性单值的）。
@@ -266,7 +266,7 @@ select * from student where sage > 20 and sgender = 'F';
     \label{lst:select_requirements}
 \end{longlisting}
 其中“条件”具有以下格式：$列 op 值 and 列 op 值 … and 列 op 值$。
-op 是算术比较符：$= <> < > <= >=$
+op 是算术比较符：$=, <>, <, >, <=, >=$
 若该语句执行成功且查询结果不为空，则按行输出查询结果，第一行为属性名，其余每一行表示一条记录；若查询结果为空，
 则输出信息告诉用户查询结果为空；若失败，必须告诉用户失败的原因。
 
@@ -392,12 +392,12 @@ show create table student2;
 \begin{itemize}
     \item \textsc{Microsoft Windows [Version 10.0.18363.836]}
     \item \textsc{Ubuntu WSL2}
-    \item \textsc{MacOS Catalina}
+    \item \textsc{MacOS 10.15 Catalina}
 \end{itemize}
-\paragraph{\texttt{Python}包要求}QScintilla, QDarkStyle, PyQt5
+\paragraph{\texttt{Python}包要求}QScintilla, QDarkStyle, PyQt5, pickle, pandas, shutil, os, sys
 \paragraph{实验系统环境} \textsc{Microsoft Windows [Version 10.0.18363.836]}
 \paragraph{实验处理器环境} Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz 12 Logical Processors
-\paragraph{实验内存环境} SODIMM 15.8GB/16.0GB
+\paragraph{实验内存环境} SODIMM 15.8GB/16.0GB and SODIMM 23.9GB/24.0GB
 \paragraph{实验硬盘环境} KBG30ZMS512G NVMe TOSHIBA 512GB
 
 \chapter{系统设计}
@@ -717,6 +717,14 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 
 对command类和catalog manager类，类间关系为command包括了catalog类，而catalog类包括了上面描述的三种基本类。
 
+\section{分工情况}
+
+\paragraph{徐震} 负责索引管理器，图形界面模块。
+
+\paragraph{曾一欣} 负责interpreter，API，目录管理器模块。
+
+\paragraph{毛一恒} 负责记录管理器，缓存管理器，文件系统模块。
+
 \chapter{系统实现分析及运行截图}
 \section{创建表语句}
 \subsection{执行流程}
@@ -835,7 +843,7 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{figure/5.5.png}
-    \caption{select-float+''<>}
+    \caption{select-float+'<>'}
     \label{fig:runtime5.5}
 \end{figure}
 \begin{figure}[H]
