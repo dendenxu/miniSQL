@@ -105,7 +105,7 @@
 	\vspace{2cm}
 	{\Large\itshape 徐\ \ 震 \textbf{3180105504} 18888916826\par}
 	{\Large\itshape 曾一欣 \textbf{3180105144} 13372553368\par}
-	{\Large\itshape 毛一恒 \textbf{3180105504} 18888916826\par}
+	{\Large\itshape 毛一恒 \textbf{3180103727} 13587492148\par}
 	\vfill
 	指导教师\par
 	\textit{孙建伶}
@@ -453,6 +453,52 @@ show create table student2;
 \subsection{图形界面}
 我们拓展了API模块的接口，通过图形界面来提高用户体验。我们设计了一个编辑器界面，加入了语法提示与自动补全。我们通过\texttt{PyQt}来实现对图形界面的构建。
 
+\subsection{缓存管理器}
+我们估计一条记录占用空间大小为定值16字节，每块(block)大小固定为4K，则每一个块中有固定记录条数256条。同时，设置内存中最多能够存储的数据块数为2048块，因此内存中数据占用的空间最大为8M，处于可以接受的范围内。这样一来，当缓存管理器进行内部管理时，我们就可以用元组[表名, 块位置, 记录位置]来唯一标识任意一条记录的物理位置，如下图1所示(事实上，每个表的块数也限制为2048，即每个表最多可以有50万条记录，对于miniSQL，这是足够大的)：
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figure/Position.jpg}
+    \caption{记录位置的唯一标识}
+    \label{fig:Position}
+\end{figure}
+为了方便模块间的信息传递，每一条记录也可以用元组[表名, 位置]来唯一标识，此时我们有：
+
+\textbf{位置 $=$ 块位置 ${\times256}$ + 记录位置}
+
+从而，无论是缓存和记录管理器之间，还是和索引管理器的信息交互，对于任一表中的任一条记录，我们总是用一个整数‘位置’来唯一标识它，且可以和图1中的表示任意转化。
+
+\paragraph{记录取得(Get Blocks)}
+当某一表的记录被查询/删除/搜索时，缓存管理器收到记录管理器的信息，并返回所需要的块列表。由于记录在文件中的排列顺序相对随机，我们设计选择返回所需表的全部记录块给记录管理器。这可以通过遍历内存中的所有数据块和相应文件中的数据块(如有必要)实现。
+
+当内存中不包含该表的全部记录信息(即块信息)时，必须要访问相应的表文件取得数据块。更进一步地，当内存中可以存储的块数满时，我们必须要换进换出数据块。需要注意的是，我们总是保证文件中的记录位置最大值大于等于缓存中的，这为脏数据块的写回(write back)提供的便利。
+
+\paragraph{记录插入(Insert Records)}
+当一条记录被插入时，缓存管理器收到记录管理器的信息。若该表中间的每一条记录都是有效(包括无记录被删除过或被删除记录的位置已全部被新纪录填充两种情况)插入记录至表的最后一行并总是将记录插入到文件末尾(记录插入文件通过调用文件管理器中相应接口完成)，否则插入记录至之前被删除记录的无效位置。
+
+在记录被删除时，为防止其他记录的位置变动，我们选择懒惰删除的形式。这就需要一个数据结构存储被删除的记录位置。因此，在插入记录时，我们必须要考虑之前是否曾经删除过记录。同时，为了搜索的方便(这是由记录取得(Get Blocks)的实现方式决定的)，当在表的最后插入记录时，总是要求也将记录插入文件的末尾，以保证缓存的记录位置最大值不会超过文件中的。
+
+插入完成后，缓存管理器返回新记录的‘位置’信息。
+
+\paragraph{最近最少用(Least Recently Used)}
+当内存中数据块个数达到预设的最大值时，需要选择合适的块进行替换。我们总是假设最近访问的块是最有可能再次访问的，因而选择使用最近最少用策略进行块替换。
+
+具体而言，即选择访问时间最早的块进行替换操作，且当所选择的块为脏(dirty)块时(即该块中的内容比文件中新)，需要先写回文件再进行替换。
+
+\paragraph{保存/取得/删除索引(Save/Get/Delete Indexes)}
+对于索引，更准确的说，是某个表上某属性的B+树结构，为了尽量减少与文件系统的交互，提高效率，我们选择将全部索引信息存储在内存中，不作数量限制，这在表数不多时是可以接受的。只在miniSQL系统启动时从文件读入全部信息，在系统关闭(或空闲)时存储全部信息至文件。
+
+因此，保存/取得/删除索引的操作均只需要对内存进行操作即可，用Python自带的字典数据结构可以非常容易地根据索引编号找到对应的B+树，进行所需的操作。
+
+\subsection{记录管理器}
+\paragraph{删除/查询记录}	
+对从缓存管理器取得的数据块列表进行按条件分析筛选，取出符合条件的记录。筛选过程基本一致，区别在于最后删除记录返回的是被删除记录的‘位置’号列表(并加入freeList中)，查询记录返回的是记录本身构成的列表。
+
+\paragraph{插入记录}
+调用缓存管理器完成记录的插入，不需要返回任何信息。
+
+\paragraph{创建/删除/清空表}
+调用缓存管理器中DataBuffer对象的成员函数完成，不需要返回任何信息。
+
 \section{主要数据结构}
 \subsection{B+树}
 \footnote{此段内容摘自\href{https://en.wikipedia.org/wiki/B+_tree}{WikiPedia}}
@@ -486,6 +532,44 @@ B+ 树的创造者 Rudolf Bayer 没有解释B代表什么。最常见的观点�
 \par
 值得注意的是，为了配合主键和记录管理器中数据的储存方式，我们往往使用一种特殊的类作为排序数组的内部容器：一种返回当前下标的特殊数组\footnote{我们可以利用这一特性而使得这种储存不占用任何空间，而同时保证接口的一致性。}。
 
+\subsection{数据块类(Class DataBlock)}
+本数据结构是缓存管理器保存数据的重要组成部分，其数据成员如下：
+\begin{itemize}
+	\item 锁位(pin)：表示该块是否被锁住，即不能被替换。为布尔(bool)类型。
+	\item 脏位(dirty)：表示该快的内容是否比文件中更加新，即是否被操作改变过但还未写回文件。为布尔(bool)类型。
+	\item 表名(tablename)：该块所对应的表名。为字符串(String)类型。
+	\item 位置(position)：块位置。为整数(int)类型。
+	\item 内容(content)：块的内容，包含该块的全部(最新)记录信息。为列表(list)类型，其中的每个元素均为一条记录元组，在列表中的位置对应在磁盘中的物理位置。
+	\item 最近访问时间(Last Access Time, LAT)：记录该块最近一次被访问的时间。
+\end{itemize}
+
+\subsection{数据缓存类(class DataBuffer)}
+本数据结构是缓存管理器数据管理的重要部分，以数据块类为主体，通过对数据块与文件之间的交互管理，提高了执行效率，其数据成员和成员函数如下：
+\begin{itemize}
+	\item 数据缓存(buffer)：一个存储数据块类的列表(list)，列表元素数最大为2048。
+	\item 数据块数(blockNum)：当前缓存中已有的数据块数，即数据缓存列表的元素数，为了方便作为数据成员单独列出。
+	\item 整个缓存查找替换(LRU)：遍历数据缓存，找到访问时间最早的块，若是脏的，写回；最后将该块在列表中删除。
+	\item 记录插入(insert\_record)：插入记录。
+	\item 整个缓存除某表外替换(LRU\_except\_one)：遍历除某一表外的数据缓存块，进行LRU操作。
+	\item 记录取得(get\_blocks)：取得某表的全部数据块。
+	\item 创建表(create\_table)：创建一个新的表(调用文件管理器)。
+	\item 删除表(delete\_table)：删除一个现有表(调用文件管理器)。
+	\item 清空表(clear\_table)：清空一个现有表的全部数据(调用文件管理器)。
+\end{itemize}
+
+\subsection{缓存管理器中的其它数据结构}
+\paragraph{freeList} 为一个字典，键值对为[表名:对应已删除元素的列表]。
+\paragraph{index\_buffer} 为一个字典，键值对为[标号:对应B+树]。
+\paragraph{maxrecordNum} 为一个字典，键值对为[表名:该表记录最大‘位置’号]。
+
+\subsection{条件类(Class Condition)}
+本数据结构对记录管理器筛选数据起着重要作用，其数据成员如下：
+\begin{itemize}
+	\item 属性(attribute)：记录是该表第几个属性上的条件，为一个整数。
+	\item 类型(type)：记录条件的类型(等于，小于，大于等)，为一个整数。
+	\item 值(value)：条件中参与比较的值。
+\end{itemize}
+
 \section{类图与类间关系}
 \subsection{B+树}
 B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完整性，我们也列举了除用户自定义类型以外的类型。}\footnote{我们使用矢量图渲染了字体，若图表过小请放大查看。}。
@@ -513,6 +597,15 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
     \includegraphics[width=\linewidth]{figure/gui_class.eps}
     \caption{图形界面类图}
     \label{fig:gui_class}
+\end{figure}
+
+\subsection{缓存管理器}
+在具体的缓存管理器实现上，我们采用了类层面上的抽象，尽可能多的利用类成员函数解决问题。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.25\linewidth]{figure/class1.jpg}
+    \caption{缓存管理器类间关系}
+    \label{fig:class1}
 \end{figure}
 
 \chapter{系统实现分析及运行截图}
@@ -770,7 +863,18 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 此次实验中我们深刻感受到了小组合作与提前定义接口的重要性，并且在B+树具体实现过程中，我们对单元测试的作用有了更进一步的了解。
 \par
 我们通过设计GUI进一步了解了程序设计过程中与人类交互方式的重要性。我们发现图形界面设计与命令行程序各有优劣，经过研究发现很多程序都采用命令行程序提供核心功能，接着通过图形界面将这些核心功能包裹。例如\texttt{Visual Studio}的\texttt{cl.exe}编译器
-
+\section{API，interpreter与catalog manager}
+在本实验中，我们实现了 API，catalog manager和interpreter模块。这三个模块是所有模块中难度相对较低，但是需要细、和耐心以及对minisql的实现流程和具体要求足够了解的部分。
+\par
+得益于小组另外两位成员的认真努力，调用封装好的record manager和index manager模块大大降低了API的实现难度。 但在完成过程中我们也遇到了很多问题，如果能够更好更仔细地交流好接口和类，这些问题其实能够更轻松解决。
+\par
+对于我个人来说，这是第一次通过git与小组成员合作完成代码，因为自己对这种合作模式的不熟悉给大家造成了不少麻烦；整个实验下来，最深的感受还是用更好的平台进行合作，确实能够方便小组交流合作，节省上传/下载/合并代码的时间。同时，在对minisql各种错误提示的处理中，也学到了利用python的exception和error类解决各种错误返回问题的方法，对如何写适用于可能状况百出的现实应用的代码有了基础的简单了解。
+\section{record, buffer manager 与 DB Files}
+在本实验中，我们实现了Record Manager，Buffer Manager，DB Files三个模块。这三个模块的关联性较大，难度适中，需要对数据库的内部有一定的理解，设计合适的存储形式并有耐心地一步步实现。
+\par
+此次实验中，我深刻体会到了小组讨论与合作中提前定义接口的重要性。一开始，我并不清楚应该从哪里入手，应该如何实现。幸运的是，在小组多次讨论后，终于有了一个比较清晰完整的实现思路。在小组成员的包容和帮助下，我最终实现了三个模块，并与小组成员实现的模块顺利对接接口。并在不断的打磨中尽量减少了bug。
+\par
+本次实验我们全程通过git来实现代码的共享和历史版本保存，方便了小组的线上实时交流合作，节约了时间，提高了效率。从数据库的知识角度看，我在对Buffer Manager的设计中更加深入理解了buffer在数据库数据查询/删除等操作中起到的作用，同时对行存储、列存储等多种形式存储方式有了一定的了解。从编程语言(python)角度看，我从几乎一窍不通到可以写一些代码，了解了python的基本类型和语法，理解了pickle，pandas等python包的强大之处。
 
 \newpage
 \part{附录}
@@ -778,6 +882,7 @@ B+树的类图实现如图\ref{fig:bplus_diagram}所示\footnote{为了类图完
 
 \begin{appendices}
 \chapter{接口说明}
+\section{index}
 \begin{longlisting}
     \begin{minted}{python}
 def create_index(ind, data_list, cmp=dummy_cmp, is_primary=False):
@@ -843,6 +948,378 @@ def update_values(ind, values):
     :param ind: id of the index whose value is to be updated
     :param values: the new values to be set to the index
     :return:
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\section{API}
+\begin{longlisting}
+    \begin{minted}{python}
+def command_prompt(file_file=None,str_command=None):
+    """
+    :param file_file: the file this function is expected to load and prompt
+    :param str_command: the string this function is expected to load and prompt
+    :return: if str_command is not None, return the string type running result
+    """
+    
+def str_main(input):
+    """
+    :param input: string type instructions
+    :return: string type running result of input instructions
+    """
+    
+def main():
+    """
+    running in cmd and print the result
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\section{interpreter}
+\begin{longlisting}
+    \begin{minted}{python}
+def translate(self, instruction):
+    """
+    :param instruction: string type instruction
+    :return: dictionary type information of instruction or (class) error
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\section{catalog manager}
+\begin{longlisting}
+    \begin{minted}{python}
+def check_table(self, name):
+	"""
+    :param name:string type name of table
+    :return: 1 if the table exists, 0 otherwise
+    """
+
+def check_index(self, table_name, attribute_name):
+    """
+    :param table_name: string type name of table
+    :param attribute_name: string type name of attribute
+    :return: 1 if the attribute in this table has index, 0 otherwise
+    """
+
+def check_unique(self, table_name, attribute_name):
+    """
+    :param table_name: string type name of table
+    :param attribute_name: string type name of attribute
+    :return: 1 if the attribute in this table is unique, 0 otherwise
+    """
+
+def check_attribute(self, table_name, attribute_name):
+    """
+    :param table_name: string type name of table
+    :param attribute_name: string type name of attribute
+    :return: 1 if the attribute in this table exists, 0 otherwise
+    """
+
+def get_unique(self, table_name):
+    """
+    :param table_name: string type name of table
+    :return: list of names of unique attributes in this table
+    """
+
+def get_index(self, table_name):
+    """
+    :param table_name: string type name of table
+    :return: list of (class) index in this table
+    """
+
+def create_table(self, table, index):
+    """
+    create a new table in catalog
+    :param table: (class) table
+    :param table: (class) index of the primary key
+    """
+
+def create_index(self, index):
+    """
+    create a new index in catalog
+    :param table: (class) index
+    """
+
+def drop_table(self, table_name):
+    """
+    drop a table in catalog
+    :param table_name: string type name of table
+    """
+
+def drop_index(self, index_name):
+    """
+    drop a index in catalog
+    :param index_name: string type name of index
+    """
+
+def check_index_name(self, index_name):
+    """
+    :param index_name: string type name of index
+    :return: 1 if the index exists, 0 otherwise
+    """
+
+def get_attribute(self, table_name):
+    """
+    :param table_name: string type name of table
+    :return: list of [name,type,length] of attributes in this table
+    """
+
+def get_primary(self, table_name):
+    """
+    :param table_name: string type name of table
+    :return: name of key attribtue
+    """
+
+def get_index_attribute(self, table):
+    """
+    :param table_name: string type name of table
+    :return: list of attribtue name of index in this table
+    """
+
+def get_index_info(self, index_name):
+    """
+    :param index_name: string type name of index
+    :return: [table name, attribute name, index id] of the index
+    """
+
+def get_attribute_type(self, table_name, attr_name):
+    """
+    :param table_name: string type name of table
+    :param attr_name: string type name of attribute
+    :return: type of the attribute in this table
+    """
+
+def get_index_id(self, table_name, attribute_name):
+    """
+    :param table_name: string type name of table
+    :param attribtue_name: string type name of attribute
+    :return: index id of the index of the attribute in this table
+    """
+
+def get_attribute_cnt(self, table_name, attr_name):
+    """
+    :param table_name: string type name of table
+    :param attr_name: string type name of attribute
+    :return: number the arrtibutes from 1 to n, return the number of required arribute
+    """
+
+def get_all_table(self):
+    """
+    :return: list of table names in this database
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\section{record manager}
+\begin{longlisting}
+    \begin{minted}{python}
+def insert_record(fname, record):
+    """
+    :param fname: the name of the table
+    :param record: a tuple of a record
+    :return: the insertion position of the record
+    """
+    
+def delete_record_with_Index(fname, indList, conditionList):
+    """
+    delete one or a serial of records using or not using Index
+    if use Index, the indList is a list, and the indList is 0 if not
+    :param fname: the name of the table
+    :param indList: the position of selected records from index manager
+    :param conditionList: a list of objects of class Condition
+    :return: the list of position of deleted records
+    """
+
+def select_record_with_Index(fname, indList, conditionList):
+    """
+    select one or a serial of records using or not using Index
+    if use Index, the indList is a list, and the indList is 0 if not
+    :param fname: the name of the table
+    :param indList: the position of selected records from index manager
+    :param conditionList: a list of objects of class Condition
+    :return: the list of selected records  
+    """
+
+def create_table(fname):
+    """
+    :param fname: the name of the table
+    """
+
+def delete_table(fname):
+    """
+    :param fname: the name of the table
+    """
+
+def clear_table(fname):
+    """
+    :param fname: the name of the table
+    """
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\section{buffer manager}
+\begin{longlisting}
+    \begin{minted}{python}
+def insert_record(self, tname, record):
+    """
+    :param tname: the name of the table
+    :param record: a tuple of a record
+    :return: the insertion position of the record
+    """
+    
+def get_blocks(self, tname): 
+    """
+    :param tname: the name of the table
+    :return: a list of all the blocks in the table
+    """
+
+def create_table(self, tname):
+    """
+    :param tname: the name of the table
+    """
+
+def delete_table(self, tname):
+    """
+    not only delete the table file, but also in buffer
+    :param tname: the name of the table
+    """
+
+def clear_table(self, tname):
+    """
+    not only clear the table file, but also in buffer
+    :param tname: the name of the table
+    """
+
+def get_index(Ind):
+    """
+    :param Ind: the serial number of a B+ tree
+    :return: a B+ tree structure
+    """
+    
+def save_index(tree, Ind):
+    """
+    :param tree: a B+ tree structure 
+    :param Ind: the serial number of a B+ tree
+    """
+    
+def delete_index(Ind):
+    """
+    :param Ind: the serial number of a B+ tree
+    """
+    
+def initialize_buffer():
+    """
+    initialize the freeList, index_buffer, maxrecordNum(get datas from files)
+    """
+    
+def quit_buffer():
+    """
+    save the freeList, index_buffer, maxrecordNum into files
+    """
+
+    \end{minted}
+    \caption{接口说明}
+    \label{lst:interface_specification}
+\end{longlisting}
+
+\section{DB Files}
+\begin{longlisting}
+    \begin{minted}{python}
+def initialize_file():
+    """
+    if there is no Document Folders 'data', 'index', 'catalog', create them
+    """
+
+def insert_new_record(fname, record):
+    """
+    :param fname: the name of the table
+    :param record: a tuple of a record
+    """
+
+def write_back(data_block):
+    """
+    write the content of the data_block back into the file, called when LRU happens
+    :param data_block: an object of the class DataBlock
+    """
+
+def get_block_data(fname, blockpos):
+    """
+    :param fname: the name of the table
+    :param blockpos: the position of the certain block in the file
+    :return: the content of one block in the file at the position of blockpos
+    """
+
+def create_data_file(fname):
+    """
+    create a file of a table
+    :param fname: the name of the table
+    """
+    
+def delete_data_file(fname):
+    """
+    delete the file of a table
+    :param fname: the name of the table    
+    """
+
+def clear_data_file(fname):
+    """
+    clear the file of a table
+    :param fname: the name of the table    
+    """
+    
+def save_index_file(index_buffer):
+    """
+    :param index_buffer: buffer of index in buffer manager
+    """
+    
+def get_index_file():
+    """
+    get the index_buffer from file when initializing
+    :return: the index_buffer
+    """
+
+def save_catalog_file(catalogManager):
+    """
+    :param catalogManager: catalog(contain the metadata) in catalog manager
+    """
+
+def get_catalog_file():
+    """
+    get the metadata for catalog manager from file when initializing
+    :return: the catalog(contain the metadata)   
+    """
+
+def save_freeList(freeList):
+    """
+    :param freeList: freeList in buffer manager to save
+    """
+    
+def get_freeList():
+    """
+    get the freeList for buffer manager from file when initializing
+    :return: the freeList
+    """
+
+def save_maxrecordNum(maxrecordNum):
+    """
+    :param maxrecordNum: freeList in buffer manager to save
+    """
+
+def get_maxrecordNum():
+    """
+    get the maxrecordNum for buffer manager from file when initializing
+    :return: the maxrecordNum
     """
     \end{minted}
     \caption{接口说明}
