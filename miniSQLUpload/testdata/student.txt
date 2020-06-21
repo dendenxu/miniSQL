@@ -1,0 +1,35 @@
+create table student2(
+	id int,
+	name char(12) unique,
+	score float,
+	primary key(id) 
+);
+
+execfile testdata/instruction0.txt;
+
+
+execfile testdata/instruction1.txt;
+
+
+execfile testdata/instruction2.txt;
+
+
+execfile testdata/instruction3.txt;
+
+
+execfile testdata/instruction4.txt;
+
+
+execfile testdata/instruction5.txt;
+
+
+execfile testdata/instruction6.txt;
+
+
+execfile testdata/instruction7.txt;
+
+
+execfile testdata/instruction8.txt;
+
+
+execfile testdata/instruction9.txt;

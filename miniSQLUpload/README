@@ -1,0 +1,77 @@
+# Files Specification
+
+The report files are at:
+`./report/`
+
+The code base of this project is at:
+`./code/`
+
+Test SQL command files to be executed are at:
+`./testdata/`
+
+MiniSQL database files are:
+`./data/` for storing actual DBFiles
+`./index/` for storing indexes
+`./catalog/` for storing catalog information
+`./figure/` for storing logo of GUI
+`./font/` for storing font of GUI
+
+Main program file is `./run.py`
+
+I'm `README`.
+
+We use GPL 3.0 License at `LICENSE`
+
+
+# System Requirements
+
+If you see any `Python` error about any package, use `pip` to fix the missing package. For example, if `PyQt5` is missing, you run `pip install PyQt5` from commandline.
+
+Please make sure you have `Python` installed on your computer. These external packages are required: `PyQt5, QDarkStyle, QScintilla, Pandas`.
+Note that `Python` won't prompt you about `QScintilla` since it's a `PyQt5` extension, so make sure that is installed if you befroe you try to import `Qsci` from `PyQt5`
+
+# How to Run
+
+To run miniSQL, you use python to execute the file `run.py` at root dir, which will by default load directories into `sys.path` and open a GUI.
+
+If you prefer to use the old commandline version, you may navigate to `./code/` and execute `API.py` using python. And miniSQL will refuse to run since it's data files are all in the root folder.
+The proper way to start the commandline is to:
+1. open python interactive shell at root (by typing `ipython` in a terminal)
+2. add `./code` to your python's path by typing in the following code:
+```python
+import sys
+sys.path.append("code")
+```
+3. then you'll be able to `from API import main` and run `main()`
+
+If you prefer to do the "commandline thing" to the GUI, you should change `from API import main` to `from GUI import main` in the above instructions to open it in a hacking way. It's not recommended to do so since `run.py` at the root folder does almost what I said above. Why type those lines?
+
+# What to Execute
+
+The miniSQL database is empty at first.
+You can execute command specified in `./report/miniSQL.pdf` in miniSQL.
+
+1. If you're using legacy commandline version, just type in the statement and hit `ENTER`. (Do remember to type in the semicolon: `;` when a statement ends.)
+2. If you're using GUI, hit `Run` button at the upper right corner of the "little" window to run the command you've typed in the editor, where you'll find most editor shortcut is supported like `copy`, `delete line`...
+And you're free to run multiple statements at one run. The SQL statements will be executed in series.
+Note that the keyboard shortcut for running the command should be `Ctrl + R` on Windows and `Command + R` on MacOS
+
+If you don't know what to do about an empty database, you can execute `execfile testdata/student.txt` in miniSQL, which will take a while (about 40s with an SSD and i7-9750 CPU). When your mouse stops spinning and there's proper output in the output window, the execution is finished.
+Then you can execfile the TA's test file with: `execfile testdata/test.txt`, which will show you some output. Or you can play around with supported SQL statements.
+
+# When to Quit
+
+1. If you're in legacy commandline version, you can use `quit` or `exit` command (type in `quit;` and hit `ENTER`) in miniSQL to quit the miniSQL command prompt.
+2. If you're using GUI, the same for CMD can be done. Also you can hit the `Quit` button to do your job. However, don't try to close the window by hitting `X` on the upper left/right corner, by which means the files might not be properly flushed to disk.
+Note that on windows you can also hit `Ctrl + Q` to quit the GUI and save data properly. However don't use `Command + Q` on macOS since the system shortcut conflicts with it, which will look like hitting the `X` directly, saving no data properly.
+
+# Author and Copyright
+
+Copyright © 2020
+Xu Zhen 3180105504
+Zeng Yixin 3180105144
+Mao Yiheng 3180103272
+
+All rights reserved.
+
+We'll soon opensource our code on https://github.com/dendenxu/miniSQL. Check it out if you're interested.
